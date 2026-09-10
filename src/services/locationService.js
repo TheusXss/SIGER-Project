@@ -3,11 +3,12 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   getDocs,
   serverTimestamp,
   query,
   orderBy,
+  where,
+  writeBatch,
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -59,6 +60,18 @@ export async function atualizarLocal(id, { name, type, building, floor, capacity
 }
 
 export async function excluirLocal(id) {
+  const batch = writeBatch(db)
+
+  const refSolicitacoes = collection(db, 'solicitacoes')
+  const consulta = query(refSolicitacoes, where('localId', '==', id))
+  const snapshot = await getDocs(consulta)
+
+  snapshot.docs.forEach((docSnap) => {
+    batch.delete(docSnap.ref)
+  })
+
   const refLocal = doc(db, COLECAO_LOCAIS, id)
-  await deleteDoc(refLocal)
+  batch.delete(refLocal)
+
+  await batch.commit()
 }

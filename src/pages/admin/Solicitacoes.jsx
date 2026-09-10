@@ -6,6 +6,7 @@ import {
   excluirSolicitacao,
   contarSolicitacoesPendentes,
   contarSolicitacoesArquivadas,
+  verificarConflitoHorario,
   STATUS_SOLICITACAO,
   STATUS_SOLICITACAO_LABELS,
   STATUS_SOLICITACAO_CORES,
@@ -40,6 +41,8 @@ export default function Solicitacoes() {
   const [observacaoCancelar, setObservacaoCancelar] = useState('')
   const [processandoAcao, setProcessandoAcao] = useState(false)
   const [erroAcao, setErroAcao] = useState('')
+
+  const [conflitosModal, setConflitosModal] = useState([])
 
   async function carregarSolicitacoes() {
     setCarregando(true)
@@ -83,11 +86,23 @@ export default function Solicitacoes() {
     setSolicitacaoDetalhe(solicitacao)
   }
 
-  function abrirProcessar(solicitacao, aprovando) {
+  async function abrirProcessar(solicitacao, aprovando) {
     setModalProcessar(solicitacao)
     setAcaoAprovacao(aprovando)
     setObservacao('')
     setErroProcessamento('')
+    setConflitosModal([])
+
+    if (aprovando) {
+      const { conflitos } = await verificarConflitoHorario({
+        localId: solicitacao.localId,
+        dataReserva: solicitacao.dataReserva,
+        horarioInicio: solicitacao.horarioInicio,
+        horarioFim: solicitacao.horarioFim,
+        excluirId: solicitacao.id,
+      })
+      setConflitosModal(conflitos)
+    }
   }
 
   function fecharModal() {
@@ -95,6 +110,7 @@ export default function Solicitacoes() {
     setAcaoAprovacao(null)
     setObservacao('')
     setErroProcessamento('')
+    setConflitosModal([])
   }
 
   function abrirArquivar(solicitacao) {
@@ -600,6 +616,20 @@ export default function Solicitacoes() {
                       }
                     />
                   </div>
+
+                  {aprovando && conflitosModal.length > 0 && (
+                    <div className="alert alert-warning py-2 mb-0" role="alert">
+                      <strong>Atenção:</strong> já existe reserva para este local no mesmo
+                      horário:
+                      <ul className="mb-0 mt-1">
+                        {conflitosModal.map((c) => (
+                          <li key={c.id}>
+                            {c.horarioInicio} às {c.horarioFim} — {c.usuarioNome} ({STATUS_SOLICITACAO_LABELS[c.status] || c.status})
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {erroProcessamento && (
                     <div className="alert alert-danger py-2 mb-0" role="alert">

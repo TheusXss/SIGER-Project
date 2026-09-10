@@ -142,7 +142,57 @@ export async function atualizarStatusSolicitacao(id, { status, observacaoAdmin =
   await updateDoc(refSolicitacao, dadosAtualizacao)
 }
 
+export async function contarSolicitacoesPorLocal(localId) {
+  const refColecao = collection(db, COLECAO_SOLICITACOES)
+  const consulta = query(refColecao, where('localId', '==', localId))
+  const snapshot = await getDocs(consulta)
+  return snapshot.size
+}
+
+export async function reativarSolicitacao(id) {
+  const refSolicitacao = doc(db, COLECAO_SOLICITACOES, id)
+  const dadosAtualizacao = {
+    status: STATUS_SOLICITACAO.PENDENTE,
+    observacaoAdmin: '',
+    updatedAt: serverTimestamp(),
+  }
+  await updateDoc(refSolicitacao, dadosAtualizacao)
+}
+
 export async function excluirSolicitacao(id) {
   const refSolicitacao = doc(db, COLECAO_SOLICITACOES, id)
   await deleteDoc(refSolicitacao)
+}
+
+export async function verificarConflitoHorario({
+  localId,
+  dataReserva,
+  horarioInicio,
+  horarioFim,
+  excluirId = null,
+}) {
+  const refColecao = collection(db, COLECAO_SOLICITACOES)
+  const consulta = query(
+    refColecao,
+    where('localId', '==', localId),
+    where('dataReserva', '==', dataReserva),
+  )
+  const snapshot = await getDocs(consulta)
+
+  const statusesValidos = [
+    STATUS_SOLICITACAO.PENDENTE,
+    STATUS_SOLICITACAO.APROVADA,
+  ]
+
+  const conflitos = snapshot.docs
+    .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+    .filter(
+      (s) =>
+        s.id !== excluirId &&
+        statusesValidos.includes(s.status) &&
+        s.horarioInicio < horarioFim &&
+        s.horarioFim > horarioInicio,
+    )
+
+  return { temConflito: conflitos.length > 0, conflitos }
 }

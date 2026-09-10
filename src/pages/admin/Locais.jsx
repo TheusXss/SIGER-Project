@@ -8,6 +8,7 @@ import {
   TIPOS_LOCAL,
   STATUS_LOCAL,
 } from '../../services/locationService'
+import { contarSolicitacoesPorLocal } from '../../services/solicitacaoService'
 import LocalFormModal from '../../components/admin/LocalFormModal'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
 
@@ -35,6 +36,7 @@ export default function Locais() {
   const [localExcluindo, setLocalExcluindo] = useState(null)
   const [excluindo, setExcluindo] = useState(false)
   const [erroExclusao, setErroExclusao] = useState('')
+  const [solicitacoesCount, setSolicitacoesCount] = useState(0)
 
   async function carregarLocais() {
     setCarregando(true)
@@ -100,9 +102,16 @@ export default function Locais() {
     }
   }
 
-  function pedirExclusao(local) {
+  async function pedirExclusao(local) {
     setLocalExcluindo(local)
     setErroExclusao('')
+    try {
+      const count = await contarSolicitacoesPorLocal(local.id)
+      setSolicitacoesCount(count)
+    } catch (error) {
+      console.error('Erro ao contar solicitações:', error)
+      setSolicitacoesCount(0)
+    }
   }
 
   async function confirmarExclusao() {
@@ -112,6 +121,7 @@ export default function Locais() {
     try {
       await excluirLocal(localExcluindo.id)
       setLocalExcluindo(null)
+      setSolicitacoesCount(0)
       await carregarLocais()
     } catch (error) {
       console.error('Erro ao excluir local:', error)
@@ -334,10 +344,10 @@ export default function Locais() {
       <ConfirmDialog
         aberto={!!localExcluindo}
         titulo="Excluir local"
-        mensagem={`Tem certeza de que deseja excluir "${localExcluindo?.name}"? Essa ação não poderá ser desfeita.`}
+        mensagem={`Tem certeza de que deseja excluir "${localExcluindo?.name}"?${solicitacoesCount > 0 ? ` Essa ação também excluirá ${solicitacoesCount} solicitação(ões) associada(s) a este local.` : ''} Essa ação não poderá ser desfeita.`}
         erro={erroExclusao}
         confirmando={excluindo}
-        onCancelar={() => setLocalExcluindo(null)}
+        onCancelar={() => { setLocalExcluindo(null); setSolicitacoesCount(0) }}
         onConfirmar={confirmarExclusao}
       />
     </>

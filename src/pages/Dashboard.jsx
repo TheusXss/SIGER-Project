@@ -7,6 +7,9 @@ import {
   criarSolicitacao,
   listarSolicitacoesPorUsuario,
   atualizarStatusSolicitacao,
+  reativarSolicitacao,
+  excluirSolicitacao,
+  verificarConflitoHorario,
   STATUS_SOLICITACAO,
   STATUS_SOLICITACAO_LABELS,
   STATUS_SOLICITACAO_CORES,
@@ -21,6 +24,14 @@ export default function Dashboard() {
   const ehAdmin = tipoUsuario === 'admin'
   const perfilLabel =
     tipoUsuario === 'admin' ? 'Administrador' : tipoUsuario === 'professor' ? 'Professor' : 'Aluno'
+
+  const hojeIso = (() => {
+    const d = new Date()
+    const ano = d.getFullYear()
+    const mes = String(d.getMonth() + 1).padStart(2, '0')
+    const dia = String(d.getDate()).padStart(2, '0')
+    return `${ano}-${mes}-${dia}`
+  })()
 
   const [locais, setLocais] = useState([])
   const [solicitacoes, setSolicitacoes] = useState([])
@@ -38,6 +49,23 @@ export default function Dashboard() {
   const [modalCancelar, setModalCancelar] = useState(null)
   const [processandoCancelar, setProcessandoCancelar] = useState(false)
   const [erroCancelar, setErroCancelar] = useState('')
+
+  const [modalReativar, setModalReativar] = useState(null)
+  const [processandoReativar, setProcessandoReativar] = useState(false)
+  const [erroReativar, setErroReativar] = useState('')
+
+  const [modalExcluir, setModalExcluir] = useState(null)
+  const [processandoExcluir, setProcessandoExcluir] = useState(false)
+  const [erroExcluir, setErroExcluir] = useState('')
+
+  const [modalArquivar, setModalArquivar] = useState(null)
+  const [processandoArquivar, setProcessandoArquivar] = useState(false)
+  const [erroArquivar, setErroArquivar] = useState('')
+
+  const [modalDesarquivar, setModalDesarquivar] = useState(null)
+  const [processandoDesarquivar, setProcessandoDesarquivar] = useState(false)
+  const [erroDesarquivar, setErroDesarquivar] = useState('')
+
   const [abaSolicitacoes, setAbaSolicitacoes] = useState('ativas')
 
   useEffect(() => {
@@ -87,6 +115,10 @@ export default function Dashboard() {
       setErroEnvio('Por favor, selecione uma data.')
       return
     }
+    if (dataReserva < hojeIso) {
+      setErroEnvio('Não é possível solicitar reservas para datas passadas.')
+      return
+    }
     if (!horarioInicio) {
       setErroEnvio('Por favor, informe o horário de início.')
       return
@@ -108,6 +140,26 @@ export default function Dashboard() {
 
     setEnviando(true)
     try {
+      const { temConflito, conflitos } = await verificarConflitoHorario({
+        localId: localSelecionado,
+        dataReserva,
+        horarioInicio,
+        horarioFim,
+      })
+
+      if (temConflito) {
+        const detalhes = conflitos
+          .map(
+            (c) =>
+              `• ${c.horarioInicio} às ${c.horarioFim} (${STATUS_SOLICITACAO_LABELS[c.status] || c.status})`,
+          )
+          .join('\n')
+        setErroEnvio(
+          `Já existe uma reserva para este local no dia e horário solicitado:\n${detalhes}\n\nPor favor, escolha outro horário.`,
+        )
+        return
+      }
+
       await criarSolicitacao({
         localId: localSelecionado,
         localNome: localEncontrado?.name || '',
@@ -162,6 +214,118 @@ export default function Dashboard() {
       setErroCancelar('Não foi possível cancelar a solicitação. Tente novamente.')
     } finally {
       setProcessandoCancelar(false)
+    }
+  }
+
+  function abrirReativar(solicitacao) {
+    setModalReativar(solicitacao)
+    setErroReativar('')
+  }
+
+  function fecharReativar() {
+    setModalReativar(null)
+    setErroReativar('')
+  }
+
+  async function confirmarReativar() {
+    if (!modalReativar) return
+    setProcessandoReativar(true)
+    setErroReativar('')
+    try {
+      await reativarSolicitacao(modalReativar.id)
+      fecharReativar()
+      await carregarMinhasSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao reativar solicitação:', error)
+      setErroReativar('Não foi possível reativar a solicitação. Tente novamente.')
+    } finally {
+      setProcessandoReativar(false)
+    }
+  }
+
+  function abrirExcluirSolicitacao(solicitacao) {
+    setModalExcluir(solicitacao)
+    setErroExcluir('')
+  }
+
+  function fecharExcluir() {
+    setModalExcluir(null)
+    setErroExcluir('')
+  }
+
+  async function confirmarExcluir() {
+    if (!modalExcluir) return
+    setProcessandoExcluir(true)
+    setErroExcluir('')
+    try {
+      await excluirSolicitacao(modalExcluir.id)
+      fecharExcluir()
+      await carregarMinhasSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao excluir solicitação:', error)
+      setErroExcluir('Não foi possível excluir a solicitação. Tente novamente.')
+    } finally {
+      setProcessandoExcluir(false)
+    }
+  }
+
+  function abrirArquivar(solicitacao) {
+    setModalArquivar(solicitacao)
+    setErroArquivar('')
+  }
+
+  function fecharArquivar() {
+    setModalArquivar(null)
+    setErroArquivar('')
+  }
+
+  async function confirmarArquivar() {
+    if (!modalArquivar) return
+    setProcessandoArquivar(true)
+    setErroArquivar('')
+    try {
+      await atualizarStatusSolicitacao(modalArquivar.id, {
+        status: STATUS_SOLICITACAO.ARQUIVADA,
+        observacaoAdmin: 'Solicitação arquivada pelo solicitante.',
+        statusAnterior: modalArquivar.status,
+      })
+      fecharArquivar()
+      await carregarMinhasSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao arquivar solicitação:', error)
+      setErroArquivar('Não foi possível arquivar a solicitação. Tente novamente.')
+    } finally {
+      setProcessandoArquivar(false)
+    }
+  }
+
+  function abrirDesarquivar(solicitacao) {
+    setModalDesarquivar(solicitacao)
+    setErroDesarquivar('')
+  }
+
+  function fecharDesarquivar() {
+    setModalDesarquivar(null)
+    setErroDesarquivar('')
+  }
+
+  async function confirmarDesarquivar() {
+    if (!modalDesarquivar) return
+    setProcessandoDesarquivar(true)
+    setErroDesarquivar('')
+    try {
+      const statusRestaurar = modalDesarquivar.statusAnterior || STATUS_SOLICITACAO.PENDENTE
+      await atualizarStatusSolicitacao(modalDesarquivar.id, {
+        status: statusRestaurar,
+        observacaoAdmin: 'Solicitação desarquivada pelo solicitante.',
+      })
+      fecharDesarquivar()
+      await carregarMinhasSolicitacoes()
+    } catch (error) {
+      console.error('Erro ao desarquivar solicitação:', error)
+      setErroDesarquivar('Não foi possível desarquivar a solicitação. Tente novamente.')
+    } finally {
+      setProcessandoDesarquivar(false)
     }
   }
 
@@ -221,7 +385,7 @@ export default function Dashboard() {
             )}
 
             {erroEnvio && (
-              <div className="alert alert-danger py-2" role="alert">
+              <div className="alert alert-danger py-2" role="alert" style={{ whiteSpace: 'pre-line' }}>
                 {erroEnvio}
               </div>
             )}
@@ -255,6 +419,7 @@ export default function Dashboard() {
                     id="data"
                     type="date"
                     className="form-control"
+                    min={hojeIso}
                     value={dataReserva}
                     onChange={(e) => setDataReserva(e.target.value)}
                   />
@@ -393,6 +558,42 @@ export default function Dashboard() {
                                 Cancelar
                               </button>
                             )}
+                            {sol.status === STATUS_SOLICITACAO.CANCELADA && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-warning"
+                                  onClick={() => abrirReativar(sol)}
+                                >
+                                  Tentar novamente
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => abrirExcluirSolicitacao(sol)}
+                                >
+                                  Excluir
+                                </button>
+                              </>
+                            )}
+                            {sol.status !== STATUS_SOLICITACAO.ARQUIVADA && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-secondary"
+                                onClick={() => abrirArquivar(sol)}
+                              >
+                                Arquivar
+                              </button>
+                            )}
+                            {sol.status === STATUS_SOLICITACAO.ARQUIVADA && (
+                              <button
+                                type="button"
+                                className="btn btn-sm btn-outline-success"
+                                onClick={() => abrirDesarquivar(sol)}
+                              >
+                                Desarquivar
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -455,6 +656,246 @@ export default function Dashboard() {
                       </>
                     ) : (
                       'Confirmar Cancelamento'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop show" />
+        </>
+      )}
+
+      {modalReativar && (
+        <>
+          <div className="modal d-block" tabIndex="-1" role="dialog">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Tentar Novamente</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={fecharReativar}
+                    aria-label="Fechar"
+                  />
+                </div>
+                <div className="modal-body">
+                  <p>
+                    Deseja tentar enviar novamente a solicitação para o local{' '}
+                    <strong>{modalReativar.localNome}</strong>?
+                  </p>
+                  <p className="text-muted small mb-0">
+                    A solicitação voltará para o status "Pendente" para nova análise do administrador.
+                  </p>
+                  {erroReativar && (
+                    <div className="alert alert-danger py-2 mb-0 mt-3" role="alert">
+                      {erroReativar}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={fecharReativar}
+                    disabled={processandoReativar}
+                  >
+                    Manter Cancelada
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-warning"
+                    onClick={confirmarReativar}
+                    disabled={processandoReativar}
+                  >
+                    {processandoReativar ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                        Reativando...
+                      </>
+                    ) : (
+                      'Tentar Novamente'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop show" />
+        </>
+      )}
+
+      {modalExcluir && (
+        <>
+          <div className="modal d-block" tabIndex="-1" role="dialog">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Excluir Solicitação</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={fecharExcluir}
+                    aria-label="Fechar"
+                  />
+                </div>
+                <div className="modal-body">
+                  <p>
+                    Tem certeza que deseja excluir permanentemente a solicitação para o local{' '}
+                    <strong>{modalExcluir.localNome}</strong>?
+                  </p>
+                  <p className="text-muted small mb-0">
+                    Esta ação não pode ser desfeita. A solicitação será removida permanentemente.
+                  </p>
+                  {erroExcluir && (
+                    <div className="alert alert-danger py-2 mb-0 mt-3" role="alert">
+                      {erroExcluir}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={fecharExcluir}
+                    disabled={processandoExcluir}
+                  >
+                    Manter Solicitação
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmarExcluir}
+                    disabled={processandoExcluir}
+                  >
+                    {processandoExcluir ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                        Excluindo...
+                      </>
+                    ) : (
+                      'Excluir Permanentemente'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop show" />
+        </>
+      )}
+
+      {modalArquivar && (
+        <>
+          <div className="modal d-block" tabIndex="-1" role="dialog">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Arquivar Solicitação</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={fecharArquivar}
+                    aria-label="Fechar"
+                  />
+                </div>
+                <div className="modal-body">
+                  <p>
+                    Deseja arquivar a solicitação para o local{' '}
+                    <strong>{modalArquivar.localNome}</strong>?
+                  </p>
+                  <p className="text-muted small mb-0">
+                    A solicitação sairá da lista de ativas e ficará na aba "Arquivadas". Você poderá desarquivá-la a qualquer momento.
+                  </p>
+                  {erroArquivar && (
+                    <div className="alert alert-danger py-2 mb-0 mt-3" role="alert">
+                      {erroArquivar}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={fecharArquivar}
+                    disabled={processandoArquivar}
+                  >
+                    Manter Ativa
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={confirmarArquivar}
+                    disabled={processandoArquivar}
+                  >
+                    {processandoArquivar ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                        Arquivando...
+                      </>
+                    ) : (
+                      'Arquivar'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop show" />
+        </>
+      )}
+
+      {modalDesarquivar && (
+        <>
+          <div className="modal d-block" tabIndex="-1" role="dialog">
+            <div className="modal-dialog modal-dialog-centered" role="document">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Desarquivar Solicitação</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={fecharDesarquivar}
+                    aria-label="Fechar"
+                  />
+                </div>
+                <div className="modal-body">
+                  <p>
+                    Deseja desarquivar a solicitação para o local{' '}
+                    <strong>{modalDesarquivar.localNome}</strong>?
+                  </p>
+                  <p className="text-muted small mb-0">
+                    A solicitação voltará para a lista de ativas com o status anterior ao arquivamento.
+                  </p>
+                  {erroDesarquivar && (
+                    <div className="alert alert-danger py-2 mb-0 mt-3" role="alert">
+                      {erroDesarquivar}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={fecharDesarquivar}
+                    disabled={processandoDesarquivar}
+                  >
+                    Manter Arquivada
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={confirmarDesarquivar}
+                    disabled={processandoDesarquivar}
+                  >
+                    {processandoDesarquivar ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" />
+                        Desarquivando...
+                      </>
+                    ) : (
+                      'Desarquivar'
                     )}
                   </button>
                 </div>
