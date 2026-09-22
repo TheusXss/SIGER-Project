@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaAutenticado() {
+      return request.auth != null;
+    }
+
+    function ehDonoDoDocumento(uid) {
+      return estaAutenticado() && request.auth.uid == uid;
+    }
+
+    // Preparado para o futuro: função pronta para checar perfis administrativos
+    // assim que o campo "role" for usado para conceder privilégios extras.
+    function ehAdmin() {
+      return estaAutenticado() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    match /users/{uid} {
+      // Leitura: o próprio usuário ou um admin
+      allow read: if ehDonoDoDocumento(uid) || ehAdmin();
+
+      // Criação: somente o próprio usuário pode criar seu documento.
+      // Aceita perfis antigos e novos para evitar bloqueios durante migração.
+      // A criação de administradores não é permitida pela aplicação, mas o
+      // papel 'admin' ainda é aceito para compatibilidade com usuários já existentes.
+      allow create: if ehDonoDoDocumento(uid) &&
+        request.resource.data.role in ['aluno', 'professor', 'user', 'admin'];
+
+      // Atualização: o próprio usuário pode atualizar seus dados, mas não pode
+      // alterar seu próprio "role"; admins podem alterar o "role" de qualquer usuário.
+      allow update: if (ehDonoDoDocumento(uid) &&
+          request.resource.data.role == resource.data.role) ||
+        ehAdmin();
+
+      // Exclusão: somente admins (ninguém pode excluir seu próprio usuário por aqui)
+      allow delete: if ehAdmin();
+    }
+
+    // Locais físicos do campus (laboratórios, salas de aula, salas
+    // administrativas, auditórios etc.). Leitura liberada a qualquer usuário
+    // autenticado; escrita restrita a administradores.
+    match /locations/{locationId} {
+      allow read: if estaAutenticado();
+      allow create, update, delete: if ehAdmin();
+    }
+
+    // Solicitações de reserva. Qualquer usuário autenticado pode criar
+    // solicitações; o próprio usuário pode ler suas solicitações; admins
+    // podem ler todas. Apenas admins podem atualizar (aprovar/rejeitar/arquivar/cancelar).
+    // O usuário também pode cancelar suas próprias solicitações pendentes.
+    // Apenas admins podem excluir solicitações permanentemente.
+    match /solicitacoes/{solicitacaoId} {
+      allow read: if estaAutenticado() &&
+        (ehAdmin() || resource.data.usuarioId == request.auth.uid);
+      allow create: if estaAutenticado();
+      allow update: if ehAdmin() ||
+        (estaAutenticado() &&
+         request.resource.data.usuarioId == resource.data.usuarioId &&
+         request.resource.data.status == 'cancelada' &&
+         resource.data.status == 'pendente');
+      allow delete: if ehAdmin();
+    }
+
+    // Qualquer outra coleção fica bloqueada por padrão até ser definida
+    // explicitamente em uma próxima etapa.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
