@@ -61,7 +61,10 @@ service cloud.firestore {
          request.resource.data.usuarioId == resource.data.usuarioId &&
          request.resource.data.status == 'cancelada' &&
          resource.data.status == 'pendente');
-      allow delete: if ehAdmin();
+      allow delete: if ehAdmin() ||
+        (estaAutenticado() &&
+         resource.data.usuarioId == request.auth.uid &&
+         (resource.data.status == 'cancelada' || resource.data.status == 'rejeitada'));
     }
 
     // Qualquer outra coleção fica bloqueada por padrão até ser definida

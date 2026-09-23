@@ -382,6 +382,14 @@ const Dashboard = memo(function Dashboard() {
           </div>
 
           <div className="topbar-actions">
+            <Link to="perfil" className="topbar-user" aria-label="Ir para o perfil">
+              <div className="topbar-avatar">{nomeExibido.charAt(0).toUpperCase()}</div>
+              <div className="topbar-user-meta">
+                <span className="topbar-user-label">{perfilLabel}</span>
+                <strong>{nomeExibido}</strong>
+              </div>
+            </Link>
+
             {ehAdmin && (
               <Link to="/admin" className="btn btn-outline-light btn-sm">
                 Painel Admin
@@ -396,14 +404,6 @@ const Dashboard = memo(function Dashboard() {
 
       <div className="container app-shell dashboard-layout">
         <aside className="dashboard-sidebar">
-          <div className="sidebar-profile">
-            <div className="avatar-badge">{nomeExibido.charAt(0).toUpperCase()}</div>
-            <div>
-              <span className="eyebrow">Usuário</span>
-              <h3 className="h6 mb-0">{nomeExibido}</h3>
-            </div>
-          </div>
-
           <nav className="sidebar-nav" aria-label="Menu lateral do usuário">
             <NavLink to="resumo" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
               <span>Resumo</span>
@@ -420,16 +420,6 @@ const Dashboard = memo(function Dashboard() {
             </NavLink>
           </nav>
 
-          <div className="sidebar-footer">
-            {ehAdmin && (
-              <Link to="/admin" className="btn btn-outline-light btn-sm w-100">
-                Painel Admin
-              </Link>
-            )}
-            <button type="button" className="btn btn-light btn-sm w-100" onClick={handleSair}>
-              Sair
-            </button>
-          </div>
         </aside>
 
         <main className="dashboard-main">

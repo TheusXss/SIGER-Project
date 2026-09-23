@@ -239,7 +239,7 @@ const Solicitacoes = memo(function Solicitacoes() {
   }
 
   async function confirmarProcessamento() {
-    if (!modalProcessar || !acaoAprovacao) return
+    if (!modalProcessar || acaoAprovacao === null) return
 
     const novoStatus = aprovando ? STATUS_SOLICITACAO.APROVADA : STATUS_SOLICITACAO.REJEITADA
 
@@ -275,6 +275,32 @@ const Solicitacoes = memo(function Solicitacoes() {
 
     return filtroStatus ? solicitacoes.filter((sol) => sol.status === filtroStatus) : solicitacoes
   }, [aba, filtroStatus, solicitacoes])
+
+  const gruposSolicitacoes = useMemo(() => {
+    if (aba === 'arquivadas') {
+      return [{
+        key: 'arquivadas',
+        titulo: 'Arquivadas',
+        itens: solicitacoesFiltradas,
+      }]
+    }
+
+    const statusOrdem = Object.entries(STATUS_SOLICITACAO_LABELS)
+      .filter(([valor]) => valor !== STATUS_SOLICITACAO.ARQUIVADA)
+      .map(([valor, label]) => ({
+        key: valor,
+        titulo: label,
+        itens: solicitacoesFiltradas.filter((sol) => sol.status === valor),
+      }))
+      .filter((grupo) => grupo.itens.length > 0)
+
+    if (filtroStatus) {
+      const grupoSelecionado = statusOrdem.find((grupo) => grupo.key === filtroStatus)
+      return grupoSelecionado ? [grupoSelecionado] : []
+    }
+
+    return statusOrdem
+  }, [aba, filtroStatus, solicitacoesFiltradas])
 
   return (
     <>
@@ -315,62 +341,48 @@ const Solicitacoes = memo(function Solicitacoes() {
           </div>
         </div>
 
-        <ul className="nav nav-pills mb-4">
-          <li className="nav-item">
-            <button
-              type="button"
-              className={`nav-link ${aba === 'solicitacoes' ? 'active' : ''}`}
-              onClick={() => trocarAba('solicitacoes')}
-            >
-              Solicitações
-              <span className="badge ms-2 bg-secondary">{qtdPendentes}</span>
-            </button>
-          </li>
-          <li className="nav-item">
-            <button
-              type="button"
-              className={`nav-link ${aba === 'arquivadas' ? 'active' : ''}`}
-              onClick={() => trocarAba('arquivadas')}
-            >
-              Arquivadas
-              <span className="badge ms-2 bg-secondary">{qtdArquivadas}</span>
-            </button>
-          </li>
-        </ul>
+        <div className="tabs-inline user-tabs admin-request-tabs mb-4">
+          <button
+            type="button"
+            className={`tab-button ${aba === 'solicitacoes' ? 'active' : ''}`}
+            onClick={() => trocarAba('solicitacoes')}
+          >
+            Solicitações
+            <span className="tab-count">{qtdPendentes}</span>
+          </button>
+          <button
+            type="button"
+            className={`tab-button ${aba === 'arquivadas' ? 'active' : ''}`}
+            onClick={() => trocarAba('arquivadas')}
+          >
+            Arquivadas
+            <span className="tab-count">{qtdArquivadas}</span>
+          </button>
+        </div>
 
         {aba === 'solicitacoes' && (
           <div className="card mb-4">
             <div className="card-body">
-              <div className="row g-3 align-items-end">
-                <div className="col-md-4">
-                  <label htmlFor="filtro-status" className="form-label">
-                    Filtrar por status
-                  </label>
-                  <select
-                    id="filtro-status"
-                    className="form-select"
-                    value={filtroStatus}
-                    onChange={(e) => setFiltroStatus(e.target.value)}
-                  >
-                    <option value="">Todos</option>
-                    {Object.entries(STATUS_SOLICITACAO_LABELS)
-                      .filter(([valor]) => valor !== STATUS_SOLICITACAO.ARQUIVADA)
-                      .map(([valor, label]) => (
-                        <option key={valor} value={valor}>
-                          {label}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="col-md-2">
-                  <button
-                    type="button"
-                    className="btn btn-outline-secondary w-100"
-                    onClick={() => setFiltroStatus('')}
-                  >
-                    Limpar filtro
-                  </button>
-                </div>
+              <div className="status-filter-list" role="tablist" aria-label="Filtrar solicitações por status">
+                <button
+                  type="button"
+                  className={`status-filter-btn ${!filtroStatus ? 'active' : ''}`}
+                  onClick={() => setFiltroStatus('')}
+                >
+                  Todos
+                </button>
+                {Object.entries(STATUS_SOLICITACAO_LABELS)
+                  .filter(([valor]) => valor !== STATUS_SOLICITACAO.ARQUIVADA)
+                  .map(([valor, label]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      className={`status-filter-btn ${filtroStatus === valor ? 'active' : ''}`}
+                      onClick={() => setFiltroStatus(valor)}
+                    >
+                      {label}
+                    </button>
+                  ))}
               </div>
             </div>
           </div>
@@ -402,74 +414,83 @@ const Solicitacoes = memo(function Solicitacoes() {
             </div>
           </div>
         ) : (
-          <div className="card">
-            <div className="table-responsive">
-              <table className="table align-middle mb-0">
-                <thead>
-                  <tr>
-                    <th>Solicitante</th>
-                    <th>Perfil</th>
-                    <th>Local</th>
-                    <th>Data</th>
-                    <th>Horário</th>
-                    <th>Status</th>
-                    <th className="text-end">Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {solicitacoesFiltradas.map((sol) => (
-                    <tr key={sol.id}>
-                      <td>
-                        <div className="fw-semibold">{sol.usuarioNome}</div>
-                        <div className="small text-muted">{sol.usuarioEmail}</div>
-                      </td>
-                      <td>
-                        <span className={`badge ${BADGE_TIPO_USUARIO[sol.usuarioTipo] || 'bg-secondary'}`}>
-                          {sol.usuarioTipo === 'aluno' ? 'Aluno' : 'Professor'}
-                        </span>
-                      </td>
-                      <td className="fw-semibold">{sol.localNome}</td>
-                      <td>{new Date(sol.dataReserva + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
-                      <td>
-                        {sol.horarioInicio} - {sol.horarioFim}
-                      </td>
-                      <td>
-                        <span className={`badge ${STATUS_SOLICITACAO_CORES[sol.status] || 'bg-secondary'}`}>
-                          {STATUS_SOLICITACAO_LABELS[sol.status] || sol.status}
-                        </span>
-                      </td>
-                      <td className="solicitacao-acoes-cell">
-                        <div className="solicitacao-acoes">
+          <div className="request-groups admin-request-groups">
+            {gruposSolicitacoes.map((grupo) => (
+              <div key={grupo.key} className="request-group">
+                <div className="request-group-header">
+                  <span className="request-group-title">{grupo.titulo}</span>
+                  <span className="request-group-count">{grupo.itens.length}</span>
+                </div>
+
+                <div className="request-group-list">
+                  {grupo.itens.map((sol) => (
+                    <div key={sol.id} className="reservation-item admin-request-item">
+                      <div className="request-header">
+                        <div className="request-main">
+                          <div className="request-title-row">
+                            <div>
+                              <strong className="d-block">{sol.usuarioNome}</strong>
+                              <small className="text-muted">{sol.usuarioEmail}</small>
+                            </div>
+                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                              <span className={`badge ${BADGE_TIPO_USUARIO[sol.usuarioTipo] || 'bg-secondary'}`}>
+                                {sol.usuarioTipo === 'aluno' ? 'Aluno' : 'Professor'}
+                              </span>
+                              <span className={`badge ${STATUS_SOLICITACAO_CORES[sol.status] || 'bg-secondary'}`}>
+                                {STATUS_SOLICITACAO_LABELS[sol.status] || sol.status}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="small text-muted mt-2">
+                            <strong className="text-dark">Local:</strong> {sol.localNome}
+                          </div>
+                          <div className="small text-muted mt-1">
+                            Data: {new Date(sol.dataReserva + 'T12:00:00').toLocaleDateString('pt-BR')} | Horário: {sol.horarioInicio} - {sol.horarioFim}
+                          </div>
+                          <div className="small text-muted mt-1">
+                            Propósito: {sol.proposito}
+                          </div>
+                          {sol.observacaoAdmin && (
+                            <div className="small mt-2 p-2 alert-light rounded">
+                              <strong>Observação do Admin:</strong> {sol.observacaoAdmin}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="request-actions admin-request-actions">
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-info"
+                            className="btn btn-sm btn-action btn-action-secondary"
                             onClick={() => abrirDetalhe(sol)}
                           >
                             Detalhes
                           </button>
+
                           {aba === 'arquivadas' && (
                             <>
                               <button
                                 type="button"
-                                className="btn btn-sm btn-outline-success"
+                                className="btn btn-sm btn-action btn-action-success"
                                 onClick={() => abrirDesarquivar(sol)}
                               >
                                 Desarquivar
                               </button>
                               <button
                                 type="button"
-                                className="btn btn-sm btn-outline-danger"
+                                className="btn btn-sm btn-action btn-action-danger"
                                 onClick={() => abrirExcluir(sol)}
                               >
                                 Excluir
                               </button>
                             </>
                           )}
+
                           {aba === 'solicitacoes' && (
                             <>
                               <button
                                 type="button"
-                                className="btn btn-sm btn-outline-secondary"
+                                className="btn btn-sm btn-action btn-action-secondary"
                                 onClick={() => abrirArquivar(sol)}
                               >
                                 Arquivar
@@ -478,14 +499,14 @@ const Solicitacoes = memo(function Solicitacoes() {
                                 <>
                                   <button
                                     type="button"
-                                    className="btn btn-sm btn-success"
+                                    className="btn btn-sm btn-action btn-action-success"
                                     onClick={() => abrirProcessar(sol, true)}
                                   >
                                     Aprovar
                                   </button>
                                   <button
                                     type="button"
-                                    className="btn btn-sm btn-danger"
+                                    className="btn btn-sm btn-action btn-action-danger"
                                     onClick={() => abrirProcessar(sol, false)}
                                   >
                                     Rejeitar
@@ -495,7 +516,7 @@ const Solicitacoes = memo(function Solicitacoes() {
                               {sol.status === STATUS_SOLICITACAO.APROVADA && (
                                 <button
                                   type="button"
-                                  className="btn btn-sm btn-warning"
+                                  className="btn btn-sm btn-action btn-action-warning"
                                   onClick={() => abrirCancelar(sol)}
                                 >
                                   Cancelar
@@ -505,7 +526,7 @@ const Solicitacoes = memo(function Solicitacoes() {
                                 sol.status === STATUS_SOLICITACAO.CANCELADA) && (
                                   <button
                                     type="button"
-                                    className="btn btn-sm btn-outline-danger"
+                                    className="btn btn-sm btn-action btn-action-danger"
                                     onClick={() => abrirExcluir(sol)}
                                   >
                                     Excluir
@@ -514,12 +535,12 @@ const Solicitacoes = memo(function Solicitacoes() {
                             </>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
