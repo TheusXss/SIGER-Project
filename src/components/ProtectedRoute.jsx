@@ -1,5 +1,9 @@
 import { Navigate } from 'react-router-dom'
+<<<<<<< HEAD
 import { useAuth } from '../contexts/AuthContext'
+=======
+import { useAuth } from '../contexts/useAuth'
+>>>>>>> 4fcfbac (atualização geral)
 
 function CarregandoTelaCheia() {
   return (

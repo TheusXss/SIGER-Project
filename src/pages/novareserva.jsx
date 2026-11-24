@@ -1,6 +1,10 @@
 function NovaReserva({
     locais,
     hojeIso,
+<<<<<<< HEAD
+=======
+    horarioMinimo,
+>>>>>>> 4fcfbac (atualização geral)
     localSelecionado,
     setLocalSelecionado,
     dataReserva,
@@ -49,7 +53,11 @@ function NovaReserva({
                         </div>
                         <div className="col-md-6 request-field">
                             <label htmlFor="horario-inicio" className="form-label">Horário de Início</label>
+<<<<<<< HEAD
                             <input id="horario-inicio" type="time" className="form-control" value={horarioInicio} onChange={(event) => setHorarioInicio(event.target.value)} />
+=======
+                            <input id="horario-inicio" type="time" className="form-control" min={horarioMinimo || undefined} value={horarioInicio} onChange={(event) => setHorarioInicio(event.target.value)} />
+>>>>>>> 4fcfbac (atualização geral)
                         </div>
                         <div className="col-md-6 request-field">
                             <label htmlFor="horario-fim" className="form-label">Horário de Término</label>

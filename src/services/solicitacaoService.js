@@ -3,11 +3,19 @@ import {
   doc,
   addDoc,
   getDocs,
+<<<<<<< HEAD
+=======
+  getDoc,
+>>>>>>> 4fcfbac (atualização geral)
   updateDoc,
   deleteDoc,
   query,
   where,
   serverTimestamp,
+<<<<<<< HEAD
+=======
+  Timestamp,
+>>>>>>> 4fcfbac (atualização geral)
 } from 'firebase/firestore'
 import { db } from './firebase'
 
@@ -126,7 +134,19 @@ export async function contarSolicitacoesArquivadas() {
   return snapshot.size
 }
 
+<<<<<<< HEAD
 export async function atualizarStatusSolicitacao(id, { status, observacaoAdmin = '', statusAnterior = null }) {
+=======
+export async function atualizarStatusSolicitacao(
+  id,
+  {
+    status,
+    observacaoAdmin = '',
+    statusAnterior = null,
+    justificativaCancelamento = null,
+  },
+) {
+>>>>>>> 4fcfbac (atualização geral)
   const refSolicitacao = doc(db, COLECAO_SOLICITACOES, id)
 
   const dadosAtualizacao = {
@@ -135,10 +155,32 @@ export async function atualizarStatusSolicitacao(id, { status, observacaoAdmin =
     updatedAt: serverTimestamp(),
   }
 
+<<<<<<< HEAD
+=======
+  if (status === STATUS_SOLICITACAO.APROVADA) {
+    const snapshot = await getDoc(refSolicitacao)
+    const reserva = snapshot.data()
+    const inicio = new Date(`${reserva.dataReserva}T${reserva.horarioInicio}:00`)
+    const fim = new Date(`${reserva.dataReserva}T${reserva.horarioFim}:00`)
+    if (!snapshot.exists() || Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
+      throw new Error('A reserva não possui data e horário válidos para presença.')
+    }
+    dadosAtualizacao.checkinInicio = Timestamp.fromDate(inicio)
+    dadosAtualizacao.checkinFim = Timestamp.fromDate(fim)
+  }
+
+>>>>>>> 4fcfbac (atualização geral)
   if (statusAnterior !== null) {
     dadosAtualizacao.statusAnterior = statusAnterior
   }
 
+<<<<<<< HEAD
+=======
+  if (justificativaCancelamento !== null) {
+    dadosAtualizacao.justificativaCancelamento = justificativaCancelamento.trim()
+  }
+
+>>>>>>> 4fcfbac (atualização geral)
   await updateDoc(refSolicitacao, dadosAtualizacao)
 }
 
@@ -154,6 +196,10 @@ export async function reativarSolicitacao(id) {
   const dadosAtualizacao = {
     status: STATUS_SOLICITACAO.PENDENTE,
     observacaoAdmin: '',
+<<<<<<< HEAD
+=======
+    justificativaCancelamento: '',
+>>>>>>> 4fcfbac (atualização geral)
     updatedAt: serverTimestamp(),
   }
   await updateDoc(refSolicitacao, dadosAtualizacao)

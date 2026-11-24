@@ -1,5 +1,16 @@
+<<<<<<< HEAD
 import { useEffect, useState } from 'react'
 import { TIPOS_LOCAL, STATUS_LOCAL } from '../../services/locationService'
+=======
+import { useState } from 'react'
+import {
+  ACESSIBILIDADES_LOCAL,
+  RECURSOS_LOCAL,
+  TIPOS_LOCAL,
+  STATUS_LOCAL,
+  obterImagensLocal,
+} from '../../services/locationService'
+>>>>>>> 4fcfbac (atualização geral)
 
 const ESTADO_INICIAL = {
   name: '',
@@ -9,6 +20,7 @@ const ESTADO_INICIAL = {
   capacity: '',
   description: '',
   status: '',
+<<<<<<< HEAD
 }
 
 export default function LocalFormModal({ aberto, local, salvando, erro, onCancelar, onSalvar }) {
@@ -33,15 +45,115 @@ export default function LocalFormModal({ aberto, local, salvando, erro, onCancel
       setErrosCampos({})
     }
   }, [aberto, local])
+=======
+  accessibility: [],
+  resources: [],
+  images: [],
+}
+
+function criarEstadoInicial(local) {
+  if (!local) return ESTADO_INICIAL
+
+  return {
+    name: local.name || '',
+    type: local.type || '',
+    building: local.building || '',
+    floor: local.floor ?? '',
+    capacity: local.capacity ?? '',
+    description: local.description || '',
+    status: local.status || '',
+    accessibility: Array.isArray(local.accessibility) ? local.accessibility : [],
+    resources: Array.isArray(local.resources) ? local.resources : [],
+    images: obterImagensLocal(local).map((imagem) => ({ ...imagem, file: null, preview: imagem.url })),
+  }
+}
+
+function lerImagemComoDataUrl(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader()
+    leitor.onload = () => resolve(leitor.result)
+    leitor.onerror = () => reject(new Error('Não foi possível carregar a prévia da imagem.'))
+    leitor.readAsDataURL(arquivo)
+  })
+}
+
+export default function LocalFormModal({ aberto, local, salvando, erro, onCancelar, onSalvar }) {
+  const [form, setForm] = useState(() => criarEstadoInicial(local))
+  const [errosCampos, setErrosCampos] = useState({})
+  const [imagemUrlInput, setImagemUrlInput] = useState('')
+>>>>>>> 4fcfbac (atualização geral)
 
   if (!aberto) return null
 
   function handleChange(campo) {
     return (event) => {
       setForm((atual) => ({ ...atual, [campo]: event.target.value }))
+<<<<<<< HEAD
     }
   }
 
+=======
+      setErrosCampos((atuais) => ({ ...atuais, [campo]: '' }))
+    }
+  }
+
+  function handleCheckboxChange(campo, valor) {
+    setForm((atual) => {
+      const selecionados = atual[campo]
+      return {
+        ...atual,
+        [campo]: selecionados.includes(valor)
+          ? selecionados.filter((item) => item !== valor)
+          : [...selecionados, valor],
+      }
+    })
+  }
+
+  async function handleImagemChange(event) {
+    const arquivos = Array.from(event.target.files || [])
+    event.target.value = ''
+
+    const arquivosValidos = arquivos.filter((arquivo) => arquivo.type.startsWith('image/') && arquivo.size <= 5 * 1024 * 1024)
+    const invalidos = arquivos.length - arquivosValidos.length
+    setErrosCampos((atuais) => ({
+      ...atuais,
+      image: invalidos ? 'Cada arquivo deve ser uma imagem de até 5 MB.' : '',
+    }))
+
+    try {
+      const novasImagens = await Promise.all(arquivosValidos.map(async (arquivo) => ({
+        url: '',
+        publicId: '',
+        file: arquivo,
+        preview: await lerImagemComoDataUrl(arquivo),
+      })))
+      setForm((atual) => ({ ...atual, images: [...atual.images, ...novasImagens] }))
+    } catch (error) {
+      setErrosCampos((atuais) => ({ ...atuais, image: error.message }))
+    }
+  }
+
+  function adicionarImagemUrl() {
+    const url = imagemUrlInput.trim()
+    try {
+      const urlValidada = new URL(url)
+      if (!['http:', 'https:'].includes(urlValidada.protocol)) throw new Error()
+      setForm((atual) => ({
+        ...atual,
+        images: [...atual.images, { url, publicId: '', file: null, preview: url }],
+      }))
+      setImagemUrlInput('')
+      setErrosCampos((atuais) => ({ ...atuais, image: '' }))
+    } catch {
+      setErrosCampos((atuais) => ({ ...atuais, image: 'Informe uma URL válida iniciada por http:// ou https://.' }))
+    }
+  }
+
+  function removerImagem(indice) {
+    setForm((atual) => ({ ...atual, images: atual.images.filter((_, index) => index !== indice) }))
+  }
+
+>>>>>>> 4fcfbac (atualização geral)
   function validar() {
     const novosErros = {}
 
@@ -58,12 +170,21 @@ export default function LocalFormModal({ aberto, local, salvando, erro, onCancel
     }
 
     const capacidadeNumero = Number(form.capacity)
+<<<<<<< HEAD
     if (form.capacity === '' || Number.isNaN(capacidadeNumero) || capacidadeNumero <= 0) {
       novosErros.capacity = 'Informe uma capacidade válida (maior que zero).'
     }
 
     if (form.floor !== '' && Number.isNaN(Number(form.floor))) {
       novosErros.floor = 'O andar deve ser um número.'
+=======
+    if (form.capacity === '' || !Number.isInteger(capacidadeNumero) || capacidadeNumero <= 0) {
+      novosErros.capacity = 'Informe uma capacidade inteira maior que zero.'
+    }
+
+    if (form.floor !== '' && !Number.isInteger(Number(form.floor))) {
+      novosErros.floor = 'O andar deve ser um número inteiro.'
+>>>>>>> 4fcfbac (atualização geral)
     }
 
     setErrosCampos(novosErros)
@@ -78,9 +199,15 @@ export default function LocalFormModal({ aberto, local, salvando, erro, onCancel
 
   return (
     <>
+<<<<<<< HEAD
       <div className="modal d-block" tabIndex="-1" role="dialog">
         <div className="modal-dialog modal-dialog-centered" role="document">
           <div className="modal-content">
+=======
+      <div className="modal d-block local-form-modal" tabIndex="-1" role="dialog">
+        <div className="modal-dialog modal-dialog-centered modal-dialog-scrollable local-form-dialog" role="document">
+          <div className="modal-content local-form-modal-content">
+>>>>>>> 4fcfbac (atualização geral)
             <form onSubmit={handleSubmit} noValidate>
               <div className="modal-header">
                 <h5 className="modal-title">{local ? 'Editar local' : 'Novo local'}</h5>
@@ -174,6 +301,10 @@ export default function LocalFormModal({ aberto, local, salvando, erro, onCancel
                     <input
                       id="local-floor"
                       type="number"
+<<<<<<< HEAD
+=======
+                      step="1"
+>>>>>>> 4fcfbac (atualização geral)
                       className={`form-control ${errosCampos.floor ? 'is-invalid' : ''}`}
                       value={form.floor}
                       onChange={handleChange('floor')}
@@ -189,6 +320,10 @@ export default function LocalFormModal({ aberto, local, salvando, erro, onCancel
                       id="local-capacity"
                       type="number"
                       min="1"
+<<<<<<< HEAD
+=======
+                      step="1"
+>>>>>>> 4fcfbac (atualização geral)
                       className={`form-control ${errosCampos.capacity ? 'is-invalid' : ''}`}
                       value={form.capacity}
                       onChange={handleChange('capacity')}
@@ -210,6 +345,115 @@ export default function LocalFormModal({ aberto, local, salvando, erro, onCancel
                     onChange={handleChange('description')}
                   />
                 </div>
+<<<<<<< HEAD
+=======
+
+                <fieldset className="mt-3">
+                  <legend className="form-label">Fotos do local</legend>
+                  <label htmlFor="local-images" className="btn btn-outline-primary mb-2">
+                    + Adicionar fotos
+                  </label>
+                  <input
+                    id="local-images"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="visually-hidden"
+                    onChange={handleImagemChange}
+                  />
+                  <div className="form-text">Selecione uma ou mais imagens de até 5 MB cada. O envio acontece ao salvar.</div>
+
+                  <label htmlFor="local-image-url" className="form-label mt-3">Adicionar por URL</label>
+                  <div className="input-group">
+                    <input
+                      id="local-image-url"
+                      type="url"
+                      className={`form-control ${errosCampos.image ? 'is-invalid' : ''}`}
+                      placeholder="https://exemplo.com/foto.jpg"
+                      value={imagemUrlInput}
+                      onChange={(event) => setImagemUrlInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault()
+                          adicionarImagemUrl()
+                        }
+                      }}
+                    />
+                    <button type="button" className="btn btn-outline-primary" onClick={adicionarImagemUrl} aria-label="Adicionar foto por URL">
+                      + Adicionar
+                    </button>
+                  </div>
+                  {errosCampos.image && <div className="text-danger small mt-1" role="alert">{errosCampos.image}</div>}
+
+                  {form.images.length > 0 && (
+                    <div className="row g-2 mt-2">
+                      {form.images.map((imagem, index) => (
+                        <div className="col-6 col-md-4" key={`${imagem.publicId || imagem.url || 'nova'}-${index}`}>
+                          <div className="border rounded-2 p-2 h-100">
+                            <img
+                              src={imagem.preview || imagem.url}
+                              alt={`Prévia ${index + 1} do local`}
+                              className="w-100 rounded-1"
+                              style={{ aspectRatio: '4 / 3', objectFit: 'cover' }}
+                            />
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-outline-danger w-100 mt-2"
+                              onClick={() => removerImagem(index)}
+                            >
+                              Remover foto {index + 1}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
+
+                <fieldset className="local-form-section mt-4">
+                  <legend className="fs-6 fw-semibold">Acessibilidade</legend>
+                  <div className="row g-2">
+                    {ACESSIBILIDADES_LOCAL.map((opcao, index) => (
+                      <div className="col-md-6" key={opcao}>
+                        <div className="form-check">
+                          <input
+                            id={`acessibilidade-${index}`}
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={form.accessibility.includes(opcao)}
+                            onChange={() => handleCheckboxChange('accessibility', opcao)}
+                          />
+                          <label className="form-check-label" htmlFor={`acessibilidade-${index}`}>
+                            {opcao}
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </fieldset>
+
+                <fieldset className="mt-4">
+                  <legend className="fs-6 fw-semibold">Equipamentos e recursos</legend>
+                  <div className="row g-2">
+                    {RECURSOS_LOCAL.map((opcao, index) => (
+                      <div className="col-md-6" key={opcao}>
+                        <div className="form-check">
+                          <input
+                            id={`recurso-${index}`}
+                            className="form-check-input"
+                            type="checkbox"
+                            checked={form.resources.includes(opcao)}
+                            onChange={() => handleCheckboxChange('resources', opcao)}
+                          />
+                          <label className="form-check-label" htmlFor={`recurso-${index}`}>
+                            {opcao}
+                          </label>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </fieldset>
+>>>>>>> 4fcfbac (atualização geral)
               </div>
 
               <div className="modal-footer">

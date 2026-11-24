@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation } from 'react-router-dom'
+<<<<<<< HEAD
 import { useAuth } from '../contexts/AuthContext'
+=======
+import { useAuth } from '../contexts/useAuth'
+>>>>>>> 4fcfbac (atualização geral)
 import { autenticarUsuario, traduzirErroFirebase } from '../services/authService'
 
 export default function Login() {
@@ -41,7 +45,11 @@ export default function Login() {
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
       <div className="card shadow-sm" style={{ width: '100%', maxWidth: 400 }}>
         <div className="card-body p-4">
+<<<<<<< HEAD
           <h1 className="h4 text-center mb-1">Sistema Integrado de Gestão de Espaços e Reservas</h1>
+=======
+          <h1 className="h4 text-center mb-1">Sistema de Gestão de Espaços e Reservas</h1>
+>>>>>>> 4fcfbac (atualização geral)
           <p className="text-center text-muted mb-4">Entrar com e-mail institucional</p>
 
           {erro && (

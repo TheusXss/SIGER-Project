@@ -11,17 +11,92 @@ service cloud.firestore {
       return estaAutenticado() && request.auth.uid == uid;
     }
 
+<<<<<<< HEAD
     // Preparado para o futuro: função pronta para checar perfis administrativos
     // assim que o campo "role" for usado para conceder privilégios extras.
+=======
+>>>>>>> 4fcfbac (atualização geral)
     function ehAdmin() {
       return estaAutenticado() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+<<<<<<< HEAD
+=======
+    function ehProfessor() {
+      return estaAutenticado() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'professor';
+    }
+
+    function ehAlunoDaTurma(turmaIds) {
+      return estaAutenticado() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'aluno' &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.turmaId in turmaIds;
+    }
+
+    function aulaEstaAberta(statusAula) {
+      return statusAula == 'agendada' || statusAula == null;
+    }
+
+    function contaInstitucionalValida(tipo) {
+      let perfil = get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      let conta = get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data;
+      return perfil.role == tipo &&
+        conta.tipo == tipo &&
+        conta.status == 'cadastrada' &&
+        conta.authUid == request.auth.uid &&
+        conta.email == perfil.email &&
+        conta.email == request.auth.token.email &&
+        conta.matricula == perfil.matricula;
+    }
+
+    function perfilVerificadoNoCadastro() {
+      let perfil = request.resource.data;
+      return perfil.verifiedAccountId is string &&
+        exists(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)) &&
+        get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data.status == 'nao_cadastrada' &&
+        get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data.tipo == perfil.role &&
+        get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data.email == perfil.email &&
+        perfil.email == request.auth.token.email &&
+        get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data.matricula == perfil.matricula &&
+        (perfil.role != 'aluno' || (
+          get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data.turmaId == perfil.turmaId &&
+          get(/databases/$(database)/documents/verifiedAccounts/$(perfil.verifiedAccountId)).data.turma == perfil.turmaNome
+        ));
+    }
+
+    function turmaCorresponde(turmaIds, turmas, indice) {
+      let turma = get(/databases/$(database)/documents/turmas/$(turmaIds[indice])).data;
+      return turmas[indice].id == turmaIds[indice] &&
+        turmas[indice].nome == turma.nome;
+    }
+
+    function localDisponivel(localId, localNome) {
+      return localId is string && localNome is string &&
+        exists(/databases/$(database)/documents/locations/$(localId)) &&
+        get(/databases/$(database)/documents/locations/$(localId)).data.status == 'Disponível' &&
+        get(/databases/$(database)/documents/locations/$(localId)).data.name == localNome;
+    }
+
+    function turmasCorrespondem(turmaIds, turmas) {
+      return turmaIds is list && turmaIds.size() >= 1 && turmaIds.size() <= 7 &&
+        turmas is list && turmas.size() == turmaIds.size() &&
+        turmaCorresponde(turmaIds, turmas, 0) &&
+        (turmaIds.size() < 2 || turmaCorresponde(turmaIds, turmas, 1)) &&
+        (turmaIds.size() < 3 || turmaCorresponde(turmaIds, turmas, 2)) &&
+        (turmaIds.size() < 4 || turmaCorresponde(turmaIds, turmas, 3)) &&
+        (turmaIds.size() < 5 || turmaCorresponde(turmaIds, turmas, 4)) &&
+        (turmaIds.size() < 6 || turmaCorresponde(turmaIds, turmas, 5)) &&
+        (turmaIds.size() < 7 || turmaCorresponde(turmaIds, turmas, 6)) &&
+        (turmaIds.size() < 8 || turmaCorresponde(turmaIds, turmas, 7));
+    }
+
+>>>>>>> 4fcfbac (atualização geral)
     match /users/{uid} {
       // Leitura: o próprio usuário ou um admin
       allow read: if ehDonoDoDocumento(uid) || ehAdmin();
 
+<<<<<<< HEAD
       // Criação: somente o próprio usuário pode criar seu documento.
       // Aceita perfis antigos e novos para evitar bloqueios durante migração.
       // A criação de administradores não é permitida pela aplicação, mas o
@@ -34,11 +109,46 @@ service cloud.firestore {
       allow update: if (ehDonoDoDocumento(uid) &&
           request.resource.data.role == resource.data.role) ||
         ehAdmin();
+=======
+      // O perfil inicial precisa corresponder a uma autorização institucional.
+      allow create: if ehDonoDoDocumento(uid) &&
+        request.resource.data.role in ['aluno', 'professor'] &&
+        perfilVerificadoNoCadastro();
+
+      // O vínculo de turma e o papel só podem ser alterados pela administração.
+      allow update: if ehAdmin();
+>>>>>>> 4fcfbac (atualização geral)
 
       // Exclusão: somente admins (ninguém pode excluir seu próprio usuário por aqui)
       allow delete: if ehAdmin();
     }
 
+<<<<<<< HEAD
+=======
+    match /users/{uid}/aulasExtrasLidas/{aulaId} {
+      allow read: if ehDonoDoDocumento(uid);
+      allow create, update: if ehDonoDoDocumento(uid) &&
+        get(/databases/$(database)/documents/users/$(uid)).data.role == 'aluno' &&
+        request.resource.data.aulaId == aulaId &&
+        request.resource.data.lidaEm == request.time &&
+        request.resource.data.keys().hasOnly(['aulaId', 'lidaEm']) &&
+        exists(/databases/$(database)/documents/turmas/$(get(/databases/$(database)/documents/users/$(uid)).data.turmaId)/aulasExtras/$(aulaId));
+      allow delete: if false;
+    }
+
+    match /users/{uid}/aulasExtrasAprovacoesLidas/{solicitacaoId} {
+      allow read: if ehDonoDoDocumento(uid);
+      allow create, update: if ehDonoDoDocumento(uid) &&
+        get(/databases/$(database)/documents/users/$(uid)).data.role == 'professor' &&
+        request.resource.data.solicitacaoId == solicitacaoId &&
+        request.resource.data.lidaEm == request.time &&
+        request.resource.data.keys().hasOnly(['solicitacaoId', 'lidaEm']) &&
+        get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(solicitacaoId)).data.professorUid == uid &&
+        get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(solicitacaoId)).data.status == 'aprovada';
+      allow delete: if false;
+    }
+
+>>>>>>> 4fcfbac (atualização geral)
     // Locais físicos do campus (laboratórios, salas de aula, salas
     // administrativas, auditórios etc.). Leitura liberada a qualquer usuário
     // autenticado; escrita restrita a administradores.
@@ -47,6 +157,268 @@ service cloud.firestore {
       allow create, update, delete: if ehAdmin();
     }
 
+<<<<<<< HEAD
+=======
+    match /qrCodes/{qrId} {
+      allow read: if estaAutenticado() && (ehAdmin() || resource.data.ativo == true);
+      allow create: if ehAdmin() &&
+        request.resource.data.ativo == true &&
+        request.resource.data.criadoPor == request.auth.uid &&
+        request.resource.data.criadoEm == request.time &&
+        request.resource.data.tipo in ['aulaExtra', 'local'] &&
+        request.resource.data.alvoId is string &&
+        request.resource.data.nome is string &&
+        request.resource.data.localId is string &&
+        request.resource.data.localNome is string &&
+        request.resource.data.keys().hasOnly(['tipo', 'alvoId', 'nome', 'localId', 'localNome', 'ativo', 'inicio', 'fim', 'criadoPor', 'criadoEm']);
+      allow update: if ehAdmin() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ativo', 'invalidadoEm', 'invalidadoPor']) &&
+        ((request.resource.data.ativo == false && request.resource.data.invalidadoEm == request.time && request.resource.data.invalidadoPor == request.auth.uid) ||
+          (request.resource.data.ativo == true && resource.data.ativo == false));
+      allow delete: if false;
+    }
+
+    match /calendarEvents/{eventId} {
+      allow read: if estaAutenticado();
+      allow create, update, delete: if ehAdmin();
+    }
+
+    match /aulasExtrasSolicitacoes/{solicitacaoId} {
+      allow read: if estaAutenticado() &&
+        (ehAdmin() || (ehProfessor() && resource.data.professorUid == request.auth.uid));
+      allow create: if estaAutenticado() &&
+        ((contaInstitucionalValida('professor') &&
+          request.resource.data.professorUid == request.auth.uid &&
+          request.resource.data.professorNome == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
+          request.resource.data.solicitanteRole == 'professor') ||
+         (ehAdmin() &&
+          request.resource.data.professorUid == '' &&
+          request.resource.data.professorNome == '' &&
+          request.resource.data.solicitanteRole == 'admin')) &&
+        request.resource.data.solicitanteUid == request.auth.uid &&
+        request.resource.data.solicitanteNome == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
+        localDisponivel(request.resource.data.localId, request.resource.data.localNome) &&
+        request.resource.data.status == 'pendente' &&
+        request.resource.data.titulo is string && request.resource.data.titulo.size() > 0 &&
+        request.resource.data.descricao is string && request.resource.data.descricao.size() > 0 &&
+        request.resource.data.materia is string && request.resource.data.materia.size() > 0 &&
+        request.resource.data.data is string && request.resource.data.data.size() == 10 &&
+        request.resource.data.horario is string &&
+        turmasCorrespondem(request.resource.data.turmaIds, request.resource.data.turmas) &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time;
+      allow update: if ehAdmin() &&
+        resource.data.status == 'pendente' &&
+        request.resource.data.status in ['aprovada', 'recusada'] &&
+        request.resource.data.administradorUid == request.auth.uid &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'administradorUid', 'administradorNome', 'justificativaRecusa', 'aulaId', 'updatedAt']) &&
+        ((request.resource.data.status == 'recusada' &&
+          request.resource.data.justificativaRecusa is string &&
+          request.resource.data.justificativaRecusa.size() > 0 &&
+          request.resource.data.aulaId == '') ||
+         (request.resource.data.status == 'aprovada' &&
+          request.resource.data.justificativaRecusa == '' &&
+          request.resource.data.aulaId == solicitacaoId &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(solicitacaoId)).data.solicitacaoId == solicitacaoId &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(solicitacaoId)).data.professorUid == resource.data.professorUid &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(solicitacaoId)).data.localId == resource.data.localId &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(solicitacaoId)).data.localNome == resource.data.localNome &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(solicitacaoId)).data.turmaIds == resource.data.turmaIds));
+      allow delete: if false;
+    }
+
+    match /aulasExtras/{aulaId} {
+      allow read: if ehAdmin() ||
+        (ehProfessor() && resource.data.professorUid == request.auth.uid) ||
+        (estaAutenticado() && ehAlunoDaTurma(resource.data.turmaIds));
+      allow create: if ehAdmin() &&
+        request.resource.data.solicitacaoId == aulaId &&
+        request.resource.data.statusAula == 'agendada' &&
+        exists(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)) &&
+        get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.status == 'pendente' &&
+        getAfter(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.status == 'aprovada' &&
+        getAfter(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.aulaId == aulaId &&
+        request.resource.data.professorUid == get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.professorUid &&
+        request.resource.data.localId == get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.localId &&
+        request.resource.data.localNome == get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.localNome &&
+        localDisponivel(request.resource.data.localId, request.resource.data.localNome) &&
+        request.resource.data.turmaIds == get(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.turmaIds;
+      allow update: if (
+          ehProfessor() &&
+          resource.data.professorUid == request.auth.uid &&
+          aulaEstaAberta(resource.data.statusAula) &&
+          request.resource.data.statusAula == 'finalizada' &&
+          request.resource.data.finalizadaPor == request.auth.uid &&
+          request.resource.data.finalizadaEm == request.time &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['statusAula', 'finalizadaEm', 'finalizadaPor'])
+        ) || (
+          ehAdmin() &&
+          resource.data.statusAula != 'cancelada' &&
+          request.resource.data.statusAula == 'cancelada' &&
+          request.resource.data.canceladaPor == request.auth.uid &&
+          request.resource.data.canceladaEm == request.time &&
+          request.resource.data.motivoCancelamento == getAfter(/databases/$(database)/documents/aulasExtrasExclusaoSolicitacoes/$(aulaId)).data.observacao &&
+          getAfter(/databases/$(database)/documents/aulasExtrasExclusaoSolicitacoes/$(aulaId)).data.status == 'aprovado' &&
+          getAfter(/databases/$(database)/documents/aulasExtrasExclusaoSolicitacoes/$(aulaId)).data.administradorUid == request.auth.uid &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['statusAula', 'canceladaEm', 'canceladaPor', 'motivoCancelamento'])
+        );
+      allow delete: if false;
+
+      match /inscritos/{alunoUid} {
+        allow read: if estaAutenticado() && (
+          ehAdmin() ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'aluno' &&
+            request.auth.uid == alunoUid &&
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.turmaId in
+              get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.turmaIds) ||
+          (ehProfessor() && get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.professorUid == request.auth.uid)
+        );
+        allow create: if estaAutenticado() &&
+          request.auth.uid == alunoUid &&
+          get(/databases/$(database)/documents/users/$(alunoUid)).data.role == 'aluno' &&
+          request.resource.data.alunoUid == alunoUid &&
+          request.resource.data.alunoNome == get(/databases/$(database)/documents/users/$(alunoUid)).data.name &&
+          request.resource.data.matricula == get(/databases/$(database)/documents/users/$(alunoUid)).data.matricula &&
+          request.resource.data.turmaId == get(/databases/$(database)/documents/users/$(alunoUid)).data.turmaId &&
+          request.resource.data.turmaId in get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.turmaIds &&
+          aulaEstaAberta(get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula) &&
+          request.resource.data.presenca == 'pendente' &&
+          request.resource.data.inscritoEm == request.time &&
+          request.resource.data.keys().hasOnly(['alunoUid', 'alunoNome', 'matricula', 'turmaId', 'inscritoEm', 'presenca']);
+        allow update: if ehProfessor() &&
+          get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.professorUid == request.auth.uid &&
+          aulaEstaAberta(get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula) &&
+          resource.data.presenca in ['pendente', 'presente', 'ausente'] &&
+          request.resource.data.presenca in ['presente', 'ausente'] &&
+          request.resource.data.presencaAtualizadaPor == request.auth.uid &&
+          request.resource.data.presencaAtualizadaEm == request.time &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['presenca', 'presencaAtualizadaEm', 'presencaAtualizadaPor']);
+        allow delete: if false;
+      }
+
+      match /presencas/{alunoUid} {
+        allow read: if ehAdmin() || (estaAutenticado() && request.auth.uid == alunoUid);
+        allow create: if estaAutenticado() &&
+          request.auth.uid == alunoUid &&
+          get(/databases/$(database)/documents/users/$(alunoUid)).data.role == 'aluno' &&
+          request.resource.data.uid == alunoUid &&
+          request.resource.data.alunoNome == get(/databases/$(database)/documents/users/$(alunoUid)).data.name &&
+          request.resource.data.tipo == 'aulaExtra' &&
+          request.resource.data.alvoId == aulaId &&
+          request.resource.data.alvoNome == get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.titulo &&
+          request.resource.data.data == get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.data &&
+          request.resource.data.localId == get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.localId &&
+          request.resource.data.localNome == get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.localNome &&
+          aulaEstaAberta(get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula) &&
+          exists(/databases/$(database)/documents/aulasExtras/$(aulaId)/inscritos/$(alunoUid)) &&
+          request.resource.data.status == 'presente' &&
+          request.resource.data.registradaEm == request.time &&
+          request.resource.data.qrId is string &&
+          exists(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)) &&
+          get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.ativo == true &&
+          get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.tipo == 'aulaExtra' &&
+          get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.alvoId == aulaId &&
+          request.time >= get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.inicio &&
+          request.time <= get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.fim &&
+          request.resource.data.keys().hasOnly(['uid', 'alunoNome', 'tipo', 'alvoId', 'alvoNome', 'data', 'localId', 'localNome', 'qrId', 'status', 'registradaEm']);
+        allow update, delete: if false;
+      }
+    }
+
+    match /aulasExtrasExclusaoSolicitacoes/{aulaId} {
+      allow read: if ehAdmin() || (ehProfessor() && resource.data.professorUid == request.auth.uid);
+      allow create: if ehProfessor() &&
+        request.resource.data.aulaId == aulaId &&
+        request.resource.data.professorUid == request.auth.uid &&
+        request.resource.data.professorNome == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.name &&
+        get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.professorUid == request.auth.uid &&
+        (aulaEstaAberta(get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula) ||
+          get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula == 'finalizada') &&
+        request.resource.data.status == 'pendente' &&
+        request.resource.data.observacao is string && request.resource.data.observacao.size() > 0 &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.keys().hasOnly(['aulaId', 'professorUid', 'professorNome', 'aulaTitulo', 'observacao', 'historico', 'status', 'administradorUid', 'respostaAdmin', 'createdAt', 'updatedAt']);
+      allow update: if ehAdmin() &&
+        resource.data.status == 'pendente' &&
+        request.resource.data.status in ['aprovado', 'recusado'] &&
+        request.resource.data.administradorUid == request.auth.uid &&
+        request.resource.data.respostaAdmin is string &&
+        request.resource.data.updatedAt == request.time &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'administradorUid', 'respostaAdmin', 'updatedAt']) &&
+        (request.resource.data.status != 'aprovado' ||
+          getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula == 'cancelada');
+      allow delete: if false;
+    }
+
+    // Contas previamente autorizadas para cadastro individual.
+    // A leitura é necessária no fluxo de cadastro e na administração.
+    match /verifiedAccounts/{accountId} {
+      allow read: if true;
+      allow create, delete: if ehAdmin();
+      allow update: if ehAdmin() || (
+        estaAutenticado() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.verifiedAccountId == accountId &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == resource.data.tipo &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.matricula == resource.data.matricula &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.email == resource.data.email &&
+        request.auth.token.email == resource.data.email &&
+        resource.data.status == 'nao_cadastrada' &&
+        request.resource.data.authUid == request.auth.uid &&
+        request.resource.data.status == 'cadastrada' &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['authUid', 'status', 'atualizadoEm', 'dataCadastro'])
+      );
+    }
+
+    // Turmas associadas aos alunos importados e às contas verificadas.
+    match /turmas/{turmaId} {
+      allow read: if true;
+      allow create, update, delete: if ehAdmin();
+    }
+
+    match /turmas/{turmaId}/aulasExtras/{aulaId} {
+      allow read: if (estaAutenticado() &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'aluno' &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.turmaId == turmaId) ||
+        (ehProfessor() && get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.professorUid == request.auth.uid) ||
+        ehAdmin();
+      allow create: if ehAdmin() &&
+        request.resource.data.turmaId == turmaId &&
+        request.resource.data.solicitacaoId == aulaId &&
+        request.resource.data.statusAula == 'agendada' &&
+        getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.solicitacaoId == aulaId &&
+        getAfter(/databases/$(database)/documents/aulasExtrasSolicitacoes/$(aulaId)).data.status == 'aprovada' &&
+        getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.turmaIds.hasAny([turmaId]) &&
+        request.resource.data.localId == getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.localId &&
+        request.resource.data.localNome == getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.localNome;
+      allow update: if (
+          ehProfessor() &&
+          get(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.professorUid == request.auth.uid &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula == 'finalizada' &&
+          aulaEstaAberta(resource.data.statusAula) &&
+          request.resource.data.statusAula == 'finalizada' &&
+          request.resource.data.finalizadaEm == getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.finalizadaEm &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusAula', 'finalizadaEm'])
+        ) || (
+          ehAdmin() &&
+          getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.statusAula == 'cancelada' &&
+          getAfter(/databases/$(database)/documents/aulasExtrasExclusaoSolicitacoes/$(aulaId)).data.status == 'aprovado' &&
+          request.resource.data.statusAula == 'cancelada' &&
+          request.resource.data.canceladaEm == getAfter(/databases/$(database)/documents/aulasExtras/$(aulaId)).data.canceladaEm &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['statusAula', 'canceladaEm'])
+        );
+      allow delete: if false;
+    }
+
+>>>>>>> 4fcfbac (atualização geral)
     // Solicitações de reserva. Qualquer usuário autenticado pode criar
     // solicitações; o próprio usuário pode ler suas solicitações; admins
     // podem ler todas. Apenas admins podem atualizar (aprovar/rejeitar/arquivar/cancelar).
@@ -59,12 +431,72 @@ service cloud.firestore {
       allow update: if ehAdmin() ||
         (estaAutenticado() &&
          request.resource.data.usuarioId == resource.data.usuarioId &&
+<<<<<<< HEAD
          request.resource.data.status == 'cancelada' &&
          resource.data.status == 'pendente');
+=======
+         (
+           (request.resource.data.status == 'cancelada' &&
+            resource.data.status == 'pendente') ||
+           (
+             request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['status', 'statusAnterior', 'observacaoAdmin', 'updatedAt']) &&
+             (
+               (request.resource.data.status == 'arquivada' &&
+                resource.data.status in ['pendente', 'em_processo', 'aprovada'] &&
+                request.resource.data.statusAnterior == resource.data.status) ||
+               (resource.data.status == 'arquivada' &&
+                request.resource.data.status == resource.data.statusAnterior &&
+                request.resource.data.status in ['pendente', 'em_processo', 'aprovada'])
+             )
+           )
+         ));
+>>>>>>> 4fcfbac (atualização geral)
       allow delete: if ehAdmin() ||
         (estaAutenticado() &&
          resource.data.usuarioId == request.auth.uid &&
          (resource.data.status == 'cancelada' || resource.data.status == 'rejeitada'));
+<<<<<<< HEAD
+=======
+
+      match /presencas/{alunoUid} {
+        allow read: if ehAdmin() || (estaAutenticado() && request.auth.uid == alunoUid);
+        allow create: if estaAutenticado() &&
+          request.auth.uid == alunoUid &&
+          get(/databases/$(database)/documents/users/$(alunoUid)).data.role == 'aluno' &&
+          exists(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)) &&
+          get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.usuarioId == alunoUid &&
+          get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.usuarioTipo == 'aluno' &&
+          get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.status == 'aprovada' &&
+          request.time >= get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.checkinInicio &&
+          request.time <= get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.checkinFim &&
+          request.resource.data.uid == alunoUid &&
+          request.resource.data.alunoNome == get(/databases/$(database)/documents/users/$(alunoUid)).data.name &&
+          request.resource.data.tipo == 'local' &&
+          request.resource.data.alvoId == get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.localId &&
+          request.resource.data.localId == get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.localId &&
+          request.resource.data.localNome == get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.localNome &&
+          request.resource.data.data == get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.dataReserva &&
+          request.resource.data.status == 'presente' &&
+          request.resource.data.registradaEm == request.time &&
+          request.resource.data.reservaId == solicitacaoId &&
+          request.resource.data.qrId is string &&
+          exists(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)) &&
+          get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.ativo == true &&
+          get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.tipo == 'local' &&
+          get(/databases/$(database)/documents/qrCodes/$(request.resource.data.qrId)).data.alvoId ==
+            get(/databases/$(database)/documents/solicitacoes/$(solicitacaoId)).data.localId &&
+          request.resource.data.keys().hasOnly(['uid', 'alunoNome', 'tipo', 'alvoId', 'alvoNome', 'data', 'localId', 'localNome', 'reservaId', 'qrId', 'status', 'registradaEm']);
+        allow update, delete: if false;
+      }
+    }
+
+    // Necessário para consultas collectionGroup('presencas'). As regras
+    // aninhadas acima continuam controlando a criação e imutabilidade.
+    match /{caminho=**}/presencas/{alunoUid} {
+      allow read: if estaAutenticado() &&
+        (ehAdmin() || resource.data.uid == request.auth.uid);
+>>>>>>> 4fcfbac (atualização geral)
     }
 
     // Qualquer outra coleção fica bloqueada por padrão até ser definida

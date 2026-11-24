@@ -8,8 +8,16 @@ const Login = lazy(() => import('./pages/Login'))
 const Cadastro = lazy(() => import('./pages/Cadastro'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
+<<<<<<< HEAD
 const Locais = lazy(() => import('./pages/admin/Locais'))
 const Solicitacoes = lazy(() => import('./pages/admin/Solicitacoes'))
+=======
+const AulasExtras = lazy(() => import('./pages/AulasExtras'))
+const Locais = lazy(() => import('./pages/admin/Locais'))
+const Solicitacoes = lazy(() => import('./pages/admin/Solicitacoes'))
+const Contas = lazy(() => import('./pages/admin/contas'))
+const PresencasAdmin = lazy(() => import('./pages/admin/Presencas'))
+>>>>>>> 4fcfbac (atualização geral)
 
 function App() {
   return (
@@ -45,6 +53,17 @@ function App() {
               }
             />
             <Route
+<<<<<<< HEAD
+=======
+              path="/admin/aulas-extras"
+              element={
+                <AdminRoute>
+                  <AulasExtras modo="gerenciar" />
+                </AdminRoute>
+              }
+            />
+            <Route
+>>>>>>> 4fcfbac (atualização geral)
               path="/admin/locais"
               element={
                 <AdminRoute>
@@ -60,6 +79,25 @@ function App() {
                 </AdminRoute>
               }
             />
+<<<<<<< HEAD
+=======
+            <Route
+              path="/admin/contas"
+              element={
+                <AdminRoute>
+                  <Contas />
+                </AdminRoute>
+              }
+            />
+            <Route
+              path="/admin/qrcodes"
+              element={
+                <AdminRoute>
+                  <PresencasAdmin />
+                </AdminRoute>
+              }
+            />
+>>>>>>> 4fcfbac (atualização geral)
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Suspense>

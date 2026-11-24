@@ -1,6 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Route, Routes, Navigate, useNavigate } from 'react-router-dom'
+<<<<<<< HEAD
 import { useAuth } from '../contexts/AuthContext'
+=======
+import { useAuth } from '../contexts/useAuth'
+>>>>>>> 4fcfbac (atualização geral)
 import { encerrarSessao } from '../services/authService'
 import { listarLocais } from '../services/locationService'
 import {
@@ -17,7 +21,18 @@ import {
 import NovaReserva from './novareserva'
 import Solicitacoes from './solicitacoes'
 import Perfil from './perfil'
+<<<<<<< HEAD
 import Resumo from './resumo'
+=======
+import Inicio from './inicio'
+import Locais from './Locais'
+import LocalDetalhe from './LocaisDetalhe'
+import NotificacoesBell from '../components/NotificacoesBell'
+import ProtectedRoute from '../components/ProtectedRoute'
+import AulasExtras from './AulasExtras'
+import AulaExtraDetalhe from './AulaExtraDetalhe'
+import RegistrarPresenca from './RegistrarPresenca'
+>>>>>>> 4fcfbac (atualização geral)
 
 const STATUS_ATIVOS = [
   STATUS_SOLICITACAO.PENDENTE,
@@ -27,6 +42,16 @@ const STATUS_ATIVOS = [
   STATUS_SOLICITACAO.CANCELADA,
 ]
 
+<<<<<<< HEAD
+=======
+function obterHorarioAtualHHMM() {
+  const agora = new Date()
+  const horas = String(agora.getHours()).padStart(2, '0')
+  const minutos = String(agora.getMinutes()).padStart(2, '0')
+  return `${horas}:${minutos}`
+}
+
+>>>>>>> 4fcfbac (atualização geral)
 const Dashboard = memo(function Dashboard() {
   const { usuarioAtual, perfilUsuario } = useAuth()
   const navigate = useNavigate()
@@ -46,6 +71,11 @@ const Dashboard = memo(function Dashboard() {
   })()
 
   const [locais, setLocais] = useState([])
+<<<<<<< HEAD
+=======
+  const [carregandoLocais, setCarregandoLocais] = useState(true)
+  const [erroLocais, setErroLocais] = useState('')
+>>>>>>> 4fcfbac (atualização geral)
   const [solicitacoes, setSolicitacoes] = useState([])
   const [carregandoSolicitacoes, setCarregandoSolicitacoes] = useState(true)
 
@@ -57,10 +87,18 @@ const Dashboard = memo(function Dashboard() {
   const [enviando, setEnviando] = useState(false)
   const [erroEnvio, setErroEnvio] = useState('')
   const [sucessoEnvio, setSucessoEnvio] = useState('')
+<<<<<<< HEAD
+=======
+  const [horarioAtualHHMM, setHorarioAtualHHMM] = useState(obterHorarioAtualHHMM)
+>>>>>>> 4fcfbac (atualização geral)
 
   const [modalCancelar, setModalCancelar] = useState(null)
   const [processandoCancelar, setProcessandoCancelar] = useState(false)
   const [erroCancelar, setErroCancelar] = useState('')
+<<<<<<< HEAD
+=======
+  const [justificativaCancelamento, setJustificativaCancelamento] = useState('')
+>>>>>>> 4fcfbac (atualização geral)
 
   const [modalReativar, setModalReativar] = useState(null)
   const [processandoReativar, setProcessandoReativar] = useState(false)
@@ -79,6 +117,7 @@ const Dashboard = memo(function Dashboard() {
   const [erroDesarquivar, setErroDesarquivar] = useState('')
 
   const [abaSolicitacoes, setAbaSolicitacoes] = useState('ativas')
+<<<<<<< HEAD
   useEffect(() => {
     async function carregarDados() {
       try {
@@ -91,6 +130,34 @@ const Dashboard = memo(function Dashboard() {
     carregarDados()
   }, [])
 
+=======
+  const [filtroStatusSolicitacoes, setFiltroStatusSolicitacoes] = useState('')
+  const carregarLocais = useCallback(async () => {
+    setCarregandoLocais(true)
+    setErroLocais('')
+    try {
+      setLocais(await listarLocais())
+    } catch (error) {
+      console.error('Erro ao carregar locais:', error)
+      setErroLocais('Não foi possível carregar os locais. Tente novamente.')
+    } finally {
+      setCarregandoLocais(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    carregarLocais()
+  }, [carregarLocais])
+
+  useEffect(() => {
+    const atualizarHorarioAtual = () => setHorarioAtualHHMM(obterHorarioAtualHHMM())
+    const intervalo = setInterval(atualizarHorarioAtual, 60000)
+    return () => clearInterval(intervalo)
+  }, [])
+
+  const locaisDisponiveis = locais.filter((local) => local.status === 'Disponível')
+
+>>>>>>> 4fcfbac (atualização geral)
   const carregarMinhasSolicitacoes = useCallback(async () => {
     if (!usuarioAtual?.uid) return
     setCarregandoSolicitacoes(true)
@@ -134,6 +201,13 @@ const Dashboard = memo(function Dashboard() {
       setErroEnvio('Por favor, informe o horário de início.')
       return
     }
+<<<<<<< HEAD
+=======
+    if (dataReserva === hojeIso && horarioInicio < obterHorarioAtualHHMM()) {
+      setErroEnvio('Não é possível solicitar reservas para horários que já passaram hoje.')
+      return
+    }
+>>>>>>> 4fcfbac (atualização geral)
     if (!horarioFim) {
       setErroEnvio('Por favor, informe o horário de término.')
       return
@@ -147,7 +221,15 @@ const Dashboard = memo(function Dashboard() {
       return
     }
 
+<<<<<<< HEAD
     const localEncontrado = locais.find((l) => l.id === localSelecionado)
+=======
+    const localEncontrado = locaisDisponiveis.find((local) => local.id === localSelecionado)
+    if (!localEncontrado) {
+      setErroEnvio('O local selecionado não está disponível para reserva.')
+      return
+    }
+>>>>>>> 4fcfbac (atualização geral)
 
     setEnviando(true)
     try {
@@ -202,21 +284,41 @@ const Dashboard = memo(function Dashboard() {
   function abrirCancelar(solicitacao) {
     setModalCancelar(solicitacao)
     setErroCancelar('')
+<<<<<<< HEAD
+=======
+    setJustificativaCancelamento('')
+>>>>>>> 4fcfbac (atualização geral)
   }
 
   function fecharCancelar() {
     setModalCancelar(null)
     setErroCancelar('')
+<<<<<<< HEAD
+=======
+    setJustificativaCancelamento('')
+>>>>>>> 4fcfbac (atualização geral)
   }
 
   async function confirmarCancelar() {
     if (!modalCancelar) return
+<<<<<<< HEAD
+=======
+    if (!justificativaCancelamento.trim()) {
+      setErroCancelar('Por favor, informe a justificativa do cancelamento.')
+      return
+    }
+>>>>>>> 4fcfbac (atualização geral)
     setProcessandoCancelar(true)
     setErroCancelar('')
     try {
       await atualizarStatusSolicitacao(modalCancelar.id, {
         status: STATUS_SOLICITACAO.CANCELADA,
+<<<<<<< HEAD
         observacaoAdmin: 'Solicitação cancelada pelo solicitante.',
+=======
+        observacaoAdmin: '',
+        justificativaCancelamento,
+>>>>>>> 4fcfbac (atualização geral)
       })
       fecharCancelar()
       await carregarMinhasSolicitacoes()
@@ -378,10 +480,32 @@ const Dashboard = memo(function Dashboard() {
         <div className="container topbar-inner">
           <div className="brand-wrap">
             <span className="brand-mark">SIGER</span>
+<<<<<<< HEAD
             <span className="brand-title">Sistema Integrado de Gestão de Espaços e Reservas</span>
           </div>
 
           <div className="topbar-actions">
+=======
+            <span className="brand-title">Sistema de Gestão de Espaços e Reservas</span>
+          </div>
+
+          <div className="topbar-actions">
+            <NotificacoesBell
+              reservas={solicitacoes.filter((solicitacao) => solicitacao.status === STATUS_SOLICITACAO.APROVADA)}
+              usuarioId={usuarioAtual?.uid || ''}
+              role={tipoUsuario}
+              turmaId={perfilUsuario?.turmaId || ''}
+            />
+            {ehAdmin && (
+              <Link to="/admin" className="topbar-admin-link" aria-label="Abrir painel administrativo">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <rect x="3.5" y="4" width="17" height="16" rx="2" />
+                  <path d="M8 8h3v3H8zM13 8h3M13 10h3M8 14h3M13 14h3M13 16h3" />
+                </svg>
+                <span>Painel admin</span>
+              </Link>
+            )}
+>>>>>>> 4fcfbac (atualização geral)
             <Link to="perfil" className="topbar-user" aria-label="Ir para o perfil">
               <div className="topbar-avatar">{nomeExibido.charAt(0).toUpperCase()}</div>
               <div className="topbar-user-meta">
@@ -389,12 +513,15 @@ const Dashboard = memo(function Dashboard() {
                 <strong>{nomeExibido}</strong>
               </div>
             </Link>
+<<<<<<< HEAD
 
             {ehAdmin && (
               <Link to="/admin" className="btn btn-outline-light btn-sm">
                 Painel Admin
               </Link>
             )}
+=======
+>>>>>>> 4fcfbac (atualização geral)
             <button type="button" className="btn btn-light btn-sm" onClick={handleSair}>
               Sair
             </button>
@@ -405,16 +532,40 @@ const Dashboard = memo(function Dashboard() {
       <div className="container app-shell dashboard-layout">
         <aside className="dashboard-sidebar">
           <nav className="sidebar-nav" aria-label="Menu lateral do usuário">
+<<<<<<< HEAD
             <NavLink to="resumo" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
               <span>Resumo</span>
+=======
+            <NavLink to="inicio" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+              <span>Início</span>
+>>>>>>> 4fcfbac (atualização geral)
             </NavLink>
             <NavLink to="nova-reserva" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
               <span>Nova reserva</span>
             </NavLink>
+<<<<<<< HEAD
+=======
+            <NavLink to="locais" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+              <span>Locais</span>
+            </NavLink>
+>>>>>>> 4fcfbac (atualização geral)
             <NavLink to="solicitacoes" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
               <span>Solicitações</span>
               <small>{solicitacoesAtivas.length}</small>
             </NavLink>
+<<<<<<< HEAD
+=======
+            {(tipoUsuario === 'aluno' || tipoUsuario === 'professor' || ehAdmin) && (
+              <NavLink to="aulas-extras" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+                <span>Aulas Extras</span>
+              </NavLink>
+            )}
+            {tipoUsuario === 'aluno' && (
+              <NavLink to="presencas" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
+                <span>Registrar Presença</span>
+              </NavLink>
+            )}
+>>>>>>> 4fcfbac (atualização geral)
             <NavLink to="perfil" className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''}`}>
               <span>Perfil</span>
             </NavLink>
@@ -424,10 +575,23 @@ const Dashboard = memo(function Dashboard() {
 
         <main className="dashboard-main">
           <Routes>
+<<<<<<< HEAD
             <Route path="" element={<Navigate to="resumo" replace />} />
             <Route path="resumo" element={<Resumo nomeExibido={nomeExibido} usuarioAtual={usuarioAtual} perfilLabel={perfilLabel} tipoUsuario={tipoUsuario} reservasPendentes={reservasPendentes} reservasAprovadas={reservasAprovadas} reservasCanceladas={reservasCanceladas} solicitacoesArquivadas={solicitacoesArquivadas} />} />
             <Route path="nova-reserva" element={<NovaReserva locais={locais} hojeIso={hojeIso} localSelecionado={localSelecionado} setLocalSelecionado={setLocalSelecionado} dataReserva={dataReserva} setDataReserva={setDataReserva} horarioInicio={horarioInicio} setHorarioInicio={setHorarioInicio} horarioFim={horarioFim} setHorarioFim={setHorarioFim} proposito={proposito} setProposito={setProposito} enviando={enviando} erroEnvio={erroEnvio} sucessoEnvio={sucessoEnvio} handleEnviarSolicitacao={handleEnviarSolicitacao} />} />
             <Route path="solicitacoes" element={<Solicitacoes abaSolicitacoes={abaSolicitacoes} setAbaSolicitacoes={setAbaSolicitacoes} solicitacoesAtivas={solicitacoesAtivas} solicitacoesArquivadas={solicitacoesArquivadas} solicitacoesExibidas={solicitacoesExibidas} carregandoSolicitacoes={carregandoSolicitacoes} abrirCancelar={abrirCancelar} abrirReativar={abrirReativar} abrirExcluirSolicitacao={abrirExcluirSolicitacao} abrirArquivar={abrirArquivar} abrirDesarquivar={abrirDesarquivar} STATUS_SOLICITACAO={STATUS_SOLICITACAO} STATUS_SOLICITACAO_LABELS={STATUS_SOLICITACAO_LABELS} STATUS_SOLICITACAO_CORES={STATUS_SOLICITACAO_CORES} />} />
+=======
+            <Route path="" element={<Navigate to="/dashboard/inicio" replace />} />
+            <Route path="resumo" element={<Navigate to="/dashboard/inicio" replace />} />
+            <Route path="inicio" element={<Inicio nomeExibido={nomeExibido} usuarioAtual={usuarioAtual} perfilUsuario={perfilUsuario} perfilLabel={perfilLabel} tipoUsuario={tipoUsuario} reservasPendentes={reservasPendentes} reservasAprovadas={reservasAprovadas} reservasCanceladas={reservasCanceladas} solicitacoesArquivadas={solicitacoesArquivadas} reservas={solicitacoes.filter((solicitacao) => solicitacao.status === STATUS_SOLICITACAO.APROVADA)} />} />
+            <Route path="nova-reserva" element={<NovaReserva locais={locaisDisponiveis} hojeIso={hojeIso} horarioMinimo={dataReserva === hojeIso ? horarioAtualHHMM : ''} localSelecionado={localSelecionado} setLocalSelecionado={setLocalSelecionado} dataReserva={dataReserva} setDataReserva={setDataReserva} horarioInicio={horarioInicio} setHorarioInicio={setHorarioInicio} horarioFim={horarioFim} setHorarioFim={setHorarioFim} proposito={proposito} setProposito={setProposito} enviando={enviando} erroEnvio={erroEnvio} sucessoEnvio={sucessoEnvio} handleEnviarSolicitacao={handleEnviarSolicitacao} />} />
+            <Route path="locais" element={<Locais locais={locais} carregando={carregandoLocais} erro={erroLocais} onTentarNovamente={carregarLocais} />} />
+            <Route path="locais/:localId" element={<LocalDetalhe locais={locais} carregando={carregandoLocais} erro={erroLocais} onTentarNovamente={carregarLocais} onReservar={(id) => { setLocalSelecionado(id); navigate('/dashboard/nova-reserva') }} />} />
+            <Route path="aulas-extras/:aulaId" element={<ProtectedRoute allowedRoles={['aluno']}><AulaExtraDetalhe /></ProtectedRoute>} />
+            <Route path="presencas" element={<ProtectedRoute allowedRoles={['aluno']}><RegistrarPresenca /></ProtectedRoute>} />
+            <Route path="aulas-extras" element={<ProtectedRoute allowedRoles={['aluno', 'professor', 'admin']}><AulasExtras modo={tipoUsuario === 'aluno' ? 'aluno' : 'solicitar'} /></ProtectedRoute>} />
+            <Route path="solicitacoes" element={<Solicitacoes abaSolicitacoes={abaSolicitacoes} setAbaSolicitacoes={setAbaSolicitacoes} filtroStatus={filtroStatusSolicitacoes} setFiltroStatus={setFiltroStatusSolicitacoes} solicitacoesAtivas={solicitacoesAtivas} solicitacoesArquivadas={solicitacoesArquivadas} solicitacoesExibidas={solicitacoesExibidas} carregandoSolicitacoes={carregandoSolicitacoes} abrirCancelar={abrirCancelar} abrirReativar={abrirReativar} abrirExcluirSolicitacao={abrirExcluirSolicitacao} abrirArquivar={abrirArquivar} abrirDesarquivar={abrirDesarquivar} STATUS_SOLICITACAO={STATUS_SOLICITACAO} STATUS_SOLICITACAO_LABELS={STATUS_SOLICITACAO_LABELS} STATUS_SOLICITACAO_CORES={STATUS_SOLICITACAO_CORES} />} />
+>>>>>>> 4fcfbac (atualização geral)
             <Route path="perfil" element={<Perfil nomeExibido={nomeExibido} email={usuarioAtual?.email} perfilLabel={perfilLabel} proximasReservas={proximasReservas} />} />
           </Routes>
 
@@ -456,6 +620,22 @@ const Dashboard = memo(function Dashboard() {
                   <p className="text-muted small mb-0">
                     Esta ação irá alterar o status da solicitação para "Cancelada".
                   </p>
+<<<<<<< HEAD
+=======
+                  <div className="mt-3">
+                    <label htmlFor="justificativa-cancelamento" className="form-label">
+                      Justificativa do cancelamento (obrigatória)
+                    </label>
+                    <textarea
+                      id="justificativa-cancelamento"
+                      className="form-control"
+                      rows="3"
+                      value={justificativaCancelamento}
+                      onChange={(event) => setJustificativaCancelamento(event.target.value)}
+                      placeholder="Descreva o motivo do cancelamento."
+                    />
+                  </div>
+>>>>>>> 4fcfbac (atualização geral)
                   {erroCancelar && (
                     <div className="alert alert-danger py-2 mb-0 mt-3" role="alert">
                       {erroCancelar}

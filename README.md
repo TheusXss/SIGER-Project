@@ -1,5 +1,18 @@
 # React + Vite
 
+<<<<<<< HEAD
+=======
+## Aulas Extras no plano Spark
+
+O fluxo de Aulas Extras usa transações do Cloud Firestore e regras de segurança; não depende de Cloud Functions nem do plano Blaze. Para publicar as regras no projeto Firebase configurado na aplicação, use o Firebase CLI:
+
+```sh
+firebase deploy --only firestore:rules --project <ID_DO_PROJETO>
+```
+
+Cada solicitação pode selecionar até 8 turmas. Esse limite permite que as regras do Firestore validem individualmente os documentos de turma existentes, junto com a identidade institucional do professor.
+
+>>>>>>> 4fcfbac (atualização geral)
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

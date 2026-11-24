@@ -1,5 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+<<<<<<< HEAD
 import { Link, NavLink } from 'react-router-dom'
+=======
+import AdminNavbar from '../../components/admin/AdminNavbar'
+>>>>>>> 4fcfbac (atualização geral)
 import {
   listarSolicitacoes,
   atualizarStatusSolicitacao,
@@ -304,6 +308,7 @@ const Solicitacoes = memo(function Solicitacoes() {
 
   return (
     <>
+<<<<<<< HEAD
       <nav className="topbar">
         <div className="container topbar-inner">
           <div className="brand-wrap">
@@ -334,6 +339,11 @@ const Solicitacoes = memo(function Solicitacoes() {
           </div>
         </div>
 
+=======
+      <AdminNavbar />
+
+      <div className="container app-shell">
+>>>>>>> 4fcfbac (atualização geral)
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
           <div>
             <span className="eyebrow">Reservas</span>
@@ -451,6 +461,15 @@ const Solicitacoes = memo(function Solicitacoes() {
                           <div className="small text-muted mt-1">
                             Propósito: {sol.proposito}
                           </div>
+<<<<<<< HEAD
+=======
+                          {sol.justificativaCancelamento && (
+                            <div className="small mt-2 p-2 alert-light rounded">
+                              <strong>Justificativa do cancelamento:</strong>{' '}
+                              {sol.justificativaCancelamento}
+                            </div>
+                          )}
+>>>>>>> 4fcfbac (atualização geral)
                           {sol.observacaoAdmin && (
                             <div className="small mt-2 p-2 alert-light rounded">
                               <strong>Observação do Admin:</strong> {sol.observacaoAdmin}
@@ -600,6 +619,18 @@ const Solicitacoes = memo(function Solicitacoes() {
                     </span>
                   </div>
 
+<<<<<<< HEAD
+=======
+                  {solicitacaoDetalhe.justificativaCancelamento && (
+                    <div className="mb-3">
+                      <strong>Justificativa do cancelamento:</strong>
+                      <p className="mb-0 mt-1 p-2 bg-light rounded" style={{ whiteSpace: 'pre-wrap' }}>
+                        {solicitacaoDetalhe.justificativaCancelamento}
+                      </p>
+                    </div>
+                  )}
+
+>>>>>>> 4fcfbac (atualização geral)
                   {solicitacaoDetalhe.observacaoAdmin && (
                     <div className="mb-3">
                       <strong>Observação do Admin:</strong>

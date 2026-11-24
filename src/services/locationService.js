@@ -18,8 +18,54 @@ export const TIPOS_LOCAL = ['Laboratório', 'Sala de Aula', 'Sala Administrativa
 
 export const STATUS_LOCAL = ['Disponível', 'Indisponível', 'Em manutenção']
 
+<<<<<<< HEAD
 export async function criarLocal({ name, type, building, floor, capacity, description, status }) {
   const refColecao = collection(db, COLECAO_LOCAIS)
+=======
+export const ACESSIBILIDADES_LOCAL = [
+  'Acesso sem degraus / rampa',
+  'Elevador',
+  'Banheiro acessível',
+  'Espaço para cadeira de rodas',
+  'Sinalização tátil',
+  'Sinalização visual de orientação',
+]
+
+export const RECURSOS_LOCAL = [
+  'Projetor',
+  'Tela de projeção',
+  'Computador',
+  'Quadro branco',
+  'Sistema de som',
+  'Microfone',
+  'Ar-condicionado',
+  'Wi-Fi',
+  'Tomadas disponíveis',
+]
+
+export function obterImagensLocal(local) {
+  if (Array.isArray(local?.images)) {
+    return local.images
+      .map((imagem) => typeof imagem === 'string' ? { url: imagem, publicId: '' } : imagem)
+      .filter((imagem) => typeof imagem?.url === 'string' && imagem.url.trim())
+  }
+  return local?.imageUrl ? [{ url: local.imageUrl, publicId: local.imagePublicId || '' }] : []
+}
+
+function normalizarImagens(images, imageUrl, imagePublicId) {
+  const lista = Array.isArray(images)
+    ? images.filter((imagem) => typeof imagem?.url === 'string' && imagem.url.trim())
+    : []
+  if (lista.length > 0) return lista
+  if (imageUrl) return [{ url: imageUrl, publicId: imagePublicId || '' }]
+  return []
+}
+
+export async function criarLocal({ name, type, building, floor, capacity, description, status, accessibility, resources, images, imageUrl, imagePublicId }) {
+  const refColecao = collection(db, COLECAO_LOCAIS)
+  const imagens = normalizarImagens(images, imageUrl, imagePublicId)
+  const imagemPrincipal = imagens[0]
+>>>>>>> 4fcfbac (atualização geral)
 
   const docCriado = await addDoc(refColecao, {
     name: name.trim(),
@@ -29,6 +75,14 @@ export async function criarLocal({ name, type, building, floor, capacity, descri
     capacity: Number(capacity),
     description: description?.trim() || '',
     status,
+<<<<<<< HEAD
+=======
+    accessibility: Array.isArray(accessibility) ? accessibility : [],
+    resources: Array.isArray(resources) ? resources : [],
+    images: imagens,
+    imageUrl: imagemPrincipal?.url || '',
+    imagePublicId: imagemPrincipal?.publicId || '',
+>>>>>>> 4fcfbac (atualização geral)
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
@@ -44,8 +98,15 @@ export async function listarLocais() {
   return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
 }
 
+<<<<<<< HEAD
 export async function atualizarLocal(id, { name, type, building, floor, capacity, description, status }) {
   const refLocal = doc(db, COLECAO_LOCAIS, id)
+=======
+export async function atualizarLocal(id, { name, type, building, floor, capacity, description, status, accessibility, resources, images, imageUrl, imagePublicId }) {
+  const refLocal = doc(db, COLECAO_LOCAIS, id)
+  const imagens = normalizarImagens(images, imageUrl, imagePublicId)
+  const imagemPrincipal = imagens[0]
+>>>>>>> 4fcfbac (atualização geral)
 
   await updateDoc(refLocal, {
     name: name.trim(),
@@ -55,6 +116,14 @@ export async function atualizarLocal(id, { name, type, building, floor, capacity
     capacity: Number(capacity),
     description: description?.trim() || '',
     status,
+<<<<<<< HEAD
+=======
+    accessibility: Array.isArray(accessibility) ? accessibility : [],
+    resources: Array.isArray(resources) ? resources : [],
+    images: imagens,
+    imageUrl: imagemPrincipal?.url || '',
+    imagePublicId: imagemPrincipal?.publicId || '',
+>>>>>>> 4fcfbac (atualização geral)
     updatedAt: serverTimestamp(),
   })
 }

@@ -1,5 +1,9 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+<<<<<<< HEAD
 import { Link, NavLink } from 'react-router-dom'
+=======
+import AdminNavbar from '../../components/admin/AdminNavbar'
+>>>>>>> 4fcfbac (atualização geral)
 import {
   criarLocal,
   listarLocais,
@@ -11,6 +15,11 @@ import {
 import { contarSolicitacoesPorLocal } from '../../services/solicitacaoService'
 import LocalFormModal from '../../components/admin/LocalFormModal'
 import ConfirmDialog from '../../components/admin/ConfirmDialog'
+<<<<<<< HEAD
+=======
+import { enviarImagemCloudinary } from '../../services/cloudinaryService'
+import { obterImagensLocal } from '../../services/locationService'
+>>>>>>> 4fcfbac (atualização geral)
 
 const BADGE_STATUS = {
   Disponível: 'bg-success',
@@ -67,6 +76,16 @@ const Locais = memo(function Locais() {
     })
   }, [locais, busca, filtroTipo, filtroStatus])
 
+<<<<<<< HEAD
+=======
+  const resumo = useMemo(() => ({
+    total: locais.length,
+    disponiveis: locais.filter((local) => local.status === 'Disponível').length,
+    manutencao: locais.filter((local) => local.status === 'Em manutenção').length,
+    indisponiveis: locais.filter((local) => local.status === 'Indisponível').length,
+  }), [locais])
+
+>>>>>>> 4fcfbac (atualização geral)
   function abrirNovo() {
     setLocalEditando(null)
     setErroFormulario('')
@@ -87,16 +106,37 @@ const Locais = memo(function Locais() {
     setSalvando(true)
     setErroFormulario('')
     try {
+<<<<<<< HEAD
       if (localEditando) {
         await atualizarLocal(localEditando.id, dadosFormulario)
       } else {
         await criarLocal(dadosFormulario)
+=======
+      const { images, ...dadosLocal } = dadosFormulario
+      const imagensSalvas = await Promise.all((images || []).map(async (imagem) => {
+        if (imagem.file) {
+          const enviada = await enviarImagemCloudinary(imagem.file)
+          return { url: enviada.imageUrl, publicId: enviada.imagePublicId }
+        }
+        return { url: imagem.url, publicId: imagem.publicId || '' }
+      }))
+      const dadosParaSalvar = { ...dadosLocal, images: imagensSalvas }
+
+      if (localEditando) {
+        await atualizarLocal(localEditando.id, dadosParaSalvar)
+      } else {
+        await criarLocal(dadosParaSalvar)
+>>>>>>> 4fcfbac (atualização geral)
       }
       setModalAberto(false)
       await carregarLocais()
     } catch (error) {
       console.error('Erro ao salvar local:', error)
+<<<<<<< HEAD
       setErroFormulario('Não foi possível salvar o local. Verifique os dados e tente novamente.')
+=======
+      setErroFormulario(error.message || 'Não foi possível salvar o local. Verifique os dados e tente novamente.')
+>>>>>>> 4fcfbac (atualização geral)
     } finally {
       setSalvando(false)
     }
@@ -133,6 +173,7 @@ const Locais = memo(function Locais() {
 
   return (
     <>
+<<<<<<< HEAD
       <nav className="topbar">
         <div className="container topbar-inner">
           <div className="brand-wrap">
@@ -160,6 +201,27 @@ const Locais = memo(function Locais() {
             <NavLink to="/admin/solicitacoes" className={({ isActive }) => `tab-button ${isActive ? 'active' : ''}`}>
               Solicitações
             </NavLink>
+=======
+      <AdminNavbar />
+
+      <div className="container app-shell">
+        <div className="stat-grid mb-4">
+          <div className="stat-card">
+            <span className="stat-label">Total de locais</span>
+            <strong className="stat-value">{carregando ? '—' : resumo.total}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Disponíveis</span>
+            <strong className="stat-value success">{carregando ? '—' : resumo.disponiveis}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Em manutenção</span>
+            <strong className="stat-value warning">{carregando ? '—' : resumo.manutencao}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-label">Indisponíveis</span>
+            <strong className="stat-value muted">{carregando ? '—' : resumo.indisponiveis}</strong>
+>>>>>>> 4fcfbac (atualização geral)
           </div>
         </div>
 
@@ -261,6 +323,10 @@ const Locais = memo(function Locais() {
                 <table className="table align-middle mb-0">
                   <thead>
                     <tr>
+<<<<<<< HEAD
+=======
+                      <th>Imagem</th>
+>>>>>>> 4fcfbac (atualização geral)
                       <th>Nome</th>
                       <th>Tipo</th>
                       <th>Bloco</th>
@@ -274,6 +340,21 @@ const Locais = memo(function Locais() {
                   <tbody>
                     {locaisFiltrados.map((local) => (
                       <tr key={local.id}>
+<<<<<<< HEAD
+=======
+                        <td>
+                          {obterImagensLocal(local)[0]?.url ? (
+                            <img
+                              src={obterImagensLocal(local)[0].url}
+                              alt={`Imagem de ${local.name}`}
+                              className="rounded border"
+                              style={{ width: 56, height: 40, objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </td>
+>>>>>>> 4fcfbac (atualização geral)
                         <td className="fw-semibold">{local.name}</td>
                         <td>{local.type}</td>
                         <td>{local.building || '-'}</td>
@@ -319,14 +400,22 @@ const Locais = memo(function Locais() {
         )}
       </div>
 
+<<<<<<< HEAD
       <LocalFormModal
+=======
+      {modalAberto && <LocalFormModal
+>>>>>>> 4fcfbac (atualização geral)
         aberto={modalAberto}
         local={localEditando}
         salvando={salvando}
         erro={erroFormulario}
         onCancelar={() => setModalAberto(false)}
         onSalvar={handleSalvar}
+<<<<<<< HEAD
       />
+=======
+      />}
+>>>>>>> 4fcfbac (atualização geral)
 
       {localDescricao && (
         <>
@@ -334,7 +423,11 @@ const Locais = memo(function Locais() {
             <div className="modal-dialog modal-dialog-centered" role="document">
               <div className="modal-content">
                 <div className="modal-header">
+<<<<<<< HEAD
                   <h5 className="modal-title">Descrição do local</h5>
+=======
+                  <h5 className="modal-title">Detalhes do local</h5>
+>>>>>>> 4fcfbac (atualização geral)
                   <button
                     type="button"
                     className="btn-close"
@@ -344,6 +437,7 @@ const Locais = memo(function Locais() {
                 </div>
                 <div className="modal-body">
                   <h6 className="mb-3">{localDescricao.name}</h6>
+<<<<<<< HEAD
                   {localDescricao.description?.trim() ? (
                     <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
                       {localDescricao.description}
@@ -351,6 +445,52 @@ const Locais = memo(function Locais() {
                   ) : (
                     <p className="text-muted mb-0">Nenhuma descrição cadastrada para este local.</p>
                   )}
+=======
+                  {obterImagensLocal(localDescricao).length > 0 && (
+                    <div className="row g-2 mb-3">
+                      {obterImagensLocal(localDescricao).map((imagem, index) => (
+                        <div className="col-6" key={`${imagem.publicId || imagem.url}-${index}`}>
+                          <img
+                            src={imagem.url}
+                            alt={`Imagem ${index + 1} de ${localDescricao.name}`}
+                            className="img-fluid rounded border w-100"
+                            style={{ aspectRatio: '4 / 3', objectFit: 'cover' }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <section className="mb-3">
+                    <h6>Descrição</h6>
+                    {localDescricao.description?.trim() ? (
+                      <p className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
+                        {localDescricao.description}
+                      </p>
+                    ) : (
+                      <p className="text-muted mb-0">Nenhuma descrição cadastrada.</p>
+                    )}
+                  </section>
+                  <section className="mb-3">
+                    <h6>Acessibilidade</h6>
+                    {Array.isArray(localDescricao.accessibility) && localDescricao.accessibility.length > 0 ? (
+                      <ul className="mb-0">
+                        {localDescricao.accessibility.map((item) => <li key={item}>{item}</li>)}
+                      </ul>
+                    ) : (
+                      <p className="text-muted mb-0">Nenhum item informado.</p>
+                    )}
+                  </section>
+                  <section>
+                    <h6>Equipamentos e recursos</h6>
+                    {Array.isArray(localDescricao.resources) && localDescricao.resources.length > 0 ? (
+                      <ul className="mb-0">
+                        {localDescricao.resources.map((item) => <li key={item}>{item}</li>)}
+                      </ul>
+                    ) : (
+                      <p className="text-muted mb-0">Nenhum item informado.</p>
+                    )}
+                  </section>
+>>>>>>> 4fcfbac (atualização geral)
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="btn btn-primary" onClick={() => setLocalDescricao(null)}>
